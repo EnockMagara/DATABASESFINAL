@@ -1,4 +1,4 @@
-<form action="/register" method="post">
+<form id="registerForm" action="/register" method="post">
     <label for="userType">User Type:</label>
     <select id="userType" name="userType" required>
         <option value="customer">Customer</option>
@@ -54,12 +54,20 @@
     </div>
 
     <!-- Staff-specific fields -->
-    <div id="staffFields">
+    <div id="staffFields" style="display: none;">
         <label for="airline_name">Airline Name:</label>
         <input type="text" id="airline_name" name="airline_name">
     </div>
 
     <button type="submit">Register</button>
 </form>
+
+<script>
+document.getElementById('userType').addEventListener('change', function() {
+    const userType = this.value;
+    document.getElementById('customerFields').style.display = userType === 'customer' ? 'block' : 'none';
+    document.getElementById('staffFields').style.display = userType === 'staff' ? 'block' : 'none';
+});
+</script>
 
 <script src="/js/main.js"></script>

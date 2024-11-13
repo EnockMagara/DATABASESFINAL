@@ -3,6 +3,8 @@ import passport from 'passport';
 import argon2 from 'argon2';
 import Customer from '../models/Customer.mjs';
 import AirlineStaff from '../models/AirlineStaff.mjs';
+import Ticket from '../models/Ticket.mjs';
+import Flight from '../models/Flight.mjs';
 
 const router = express.Router();
 
@@ -18,10 +20,37 @@ router.get('/register', (req, res) => {
     res.render('public/register');
 });
 
-// Route to render the login page
-router.get('/login', (req, res) => {
-    // Render the login.ejs file
-    res.render('public/login');
+// Route to render the customer login page
+router.get('/customer-login', (req, res) => {
+    res.render('public/customerLogin');
+});
+
+// Route to render the staff login page
+router.get('/staff-login', (req, res) => {
+    res.render('public/staffLogin');
+});
+
+// Route to render the customer dashboard
+router.get('/customer/dashboard', async (req, res) => {
+    try {
+        // Fetch tickets for the logged-in customer
+        const tickets = await Ticket.findAll({
+            where: { email: req.user.email },
+            include: [{ model: Flight }] // Include related Flight data
+        });
+
+        // Render the customer dashboard view with tickets
+        res.render('customer/dashboard', { user: req.user, tickets });
+    } catch (error) {
+        console.error('Error fetching tickets:', error);
+        res.status(500).send('Error loading dashboard');
+    }
+});
+
+// Route to render the staff dashboard
+router.get('/staff/dashboard', (req, res) => {
+    // Render the staff dashboard view
+    res.render('staff/dashboard', { user: req.user });
 });
 
 // Route for user registration
@@ -49,6 +78,8 @@ router.post('/register', async (req, res) => {
                 passport_expiration: otherDetails.passport_expiration,
                 passport_country: otherDetails.passport_country
             });
+            // Redirect to customer login page
+            res.redirect('/customer-login');
         } else if (userType === 'staff') {
             // Save airline staff to the database with all details
             await AirlineStaff.create({
@@ -59,10 +90,9 @@ router.post('/register', async (req, res) => {
                 date_of_birth: otherDetails.date_of_birth,
                 airline_name: otherDetails.airline_name
             });
+            // Redirect to staff login page
+            res.redirect('/staff-login');
         }
-
-        // Send success response
-        res.redirect('/login');
     } catch (error) {
         // Handle errors and send error response
         res.status(500).send('Error registering user');
@@ -71,13 +101,37 @@ router.post('/register', async (req, res) => {
 
 // Route for user login
 router.post('/login', (req, res, next) => {
+    console.log('Request body:', req.body); // Log the entire request body
     const { userType } = req.body;
-    const strategy = userType === 'customer' ? 'customer-local' : 'staff-local';
+    console.log('Login attempt:', { userType });
 
-    passport.authenticate(strategy, {
-        successRedirect: '/home', // Redirect to home on success
-        failureRedirect: '/login', // Redirect back to login on failure
-        failureFlash: true // Enable flash messages
+    const strategy = userType === 'customer' ? 'customer-local' : 'staff-local';
+    console.log('Using strategy:', strategy); // Log the authentication strategy being used
+
+    passport.authenticate(strategy, (err, user, info) => {
+        if (err) {
+            console.error('Authentication error:', err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+        if (!user) {
+            console.log('Authentication failed:', info);
+            return res.status(401).json({ success: false, message: info.message });
+        }
+        req.logIn(user, (err) => {
+            if (err) {
+                console.error('Login error:', err);
+                return res.status(500).json({ success: false, message: 'Internal server error' });
+            }
+            console.log('Login successful:', user);
+            // Redirect based on user type
+            if (userType === 'customer') {
+                console.log('Redirecting to /customer/dashboard');
+                return res.redirect('/customer/dashboard');
+            } else {
+                console.log('Redirecting to /staff/dashboard');
+                return res.redirect('/staff/dashboard');
+            }
+        });
     })(req, res, next);
 });
 

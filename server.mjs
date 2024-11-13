@@ -1,6 +1,7 @@
 import express from 'express';
 import session from 'express-session';
 import passport from './config/auth.mjs';
+import flash from 'connect-flash';
 import authRoutes from './routes/auth.mjs';
 import staffRoutes from './routes/staff.mjs';
 import customerRoutes from './routes/customer.mjs';
@@ -23,6 +24,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false
 }));
+app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 
