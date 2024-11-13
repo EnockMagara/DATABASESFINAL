@@ -14,11 +14,33 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await argon2.hash(password);
 
         if (userType === 'customer') {
-            // Save customer to the database
-            await Customer.create({ email, password: hashedPassword, ...otherDetails });
+            // Save customer to the database with all details
+            await Customer.create({
+                email,
+                password: hashedPassword,
+                first_name: otherDetails.first_name,
+                last_name: otherDetails.last_name,
+                date_of_birth: otherDetails.date_of_birth,
+                building_number: otherDetails.building_number,
+                street: otherDetails.street,
+                apartment_number: otherDetails.apartment_number,
+                city: otherDetails.city,
+                state: otherDetails.state,
+                zip_code: otherDetails.zip_code,
+                passport_number: otherDetails.passport_number,
+                passport_expiration: otherDetails.passport_expiration,
+                passport_country: otherDetails.passport_country
+            });
         } else if (userType === 'staff') {
-            // Save airline staff to the database
-            await AirlineStaff.create({ username, password: hashedPassword, ...otherDetails });
+            // Save airline staff to the database with all details
+            await AirlineStaff.create({
+                username,
+                password: hashedPassword,
+                first_name: otherDetails.first_name,
+                last_name: otherDetails.last_name,
+                date_of_birth: otherDetails.date_of_birth,
+                airline_name: otherDetails.airline_name
+            });
         }
 
         // Send success response

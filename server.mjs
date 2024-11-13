@@ -2,6 +2,9 @@ import express from 'express';
 import session from 'express-session';
 import passport from './config/auth.mjs';
 import authRoutes from './routes/auth.mjs';
+import staffRoutes from './routes/staff.mjs';
+import customerRoutes from './routes/customer.mjs';
+import publicRoutes from './routes/public.mjs';
 import errorHandler from './middleware/errorHandler.mjs';
 import dotenv from 'dotenv';
 
@@ -23,6 +26,9 @@ app.use(passport.session());
 
 // Routes
 app.use('/', authRoutes);
+app.use('/staff', staffRoutes);
+app.use('/customer', customerRoutes);
+app.use('/public', publicRoutes);
 
 // Error handling
 app.use(errorHandler);
