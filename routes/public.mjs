@@ -1,4 +1,5 @@
 import express from 'express';
+import { Op } from 'sequelize'; // Import Sequelize operators
 import Flight from '../models/Flight.mjs'; // Import the Flight model
 
 const router = express.Router();
