@@ -13,6 +13,8 @@ dotenv.config();
 
 const app = express();
 
+app.set('view engine', 'ejs');
+
 // Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

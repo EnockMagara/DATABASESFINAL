@@ -1,28 +1,57 @@
-<form action="/public/search-flights" method="get">
-    <label for="source">Source Airport:</label>
-    <input type="text" id="source" name="source" required>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+</head>
+<body>
+    <h1>Welcome to the Flight Reservation System</h1>
 
-    <label for="destination">Destination Airport:</label>
-    <input type="text" id="destination" name="destination" required>
+    <!-- Section for viewing public information -->
+    <section>
+        <h2>Search for Flights</h2>
+        <form action="/public/search-flights" method="get">
+            <label for="source">Source Airport:</label>
+            <input type="text" id="source" name="source" required>
 
-    <label for="departureDate">Departure Date:</label>
-    <input type="date" id="departureDate" name="departureDate" required>
+            <label for="destination">Destination Airport:</label>
+            <input type="text" id="destination" name="destination" required>
 
-    <label for="returnDate">Return Date (optional):</label>
-    <input type="date" id="returnDate" name="returnDate">
+            <label for="departureDate">Departure Date:</label>
+            <input type="date" id="departureDate" name="departureDate" required>
 
-    <button type="submit">Search Flights</button>
-</form>
+            <label for="returnDate">Return Date (optional):</label>
+            <input type="date" id="returnDate" name="returnDate">
 
-<form action="/public/flight-status" method="get">
-    <label for="airline">Airline Name:</label>
-    <input type="text" id="airline" name="airline" required>
+            <button type="submit">Search Flights</button>
+        </form>
 
-    <label for="flightNumber">Flight Number:</label>
-    <input type="text" id="flightNumber" name="flightNumber" required>
+        <h2>Check Flight Status</h2>
+        <form action="/public/flight-status" method="get">
+            <label for="airline">Airline Name:</label>
+            <input type="text" id="airline" name="airline" required>
 
-    <label for="date">Date:</label>
-    <input type="date" id="date" name="date" required>
+            <label for="flightNumber">Flight Number:</label>
+            <input type="text" id="flightNumber" name="flightNumber" required>
 
-    <button type="submit">Check Flight Status</button>
-</form>
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+
+            <button type="submit">Check Flight Status</button>
+        </form>
+    </section>
+
+    <!-- Section for user registration -->
+    <section>
+        <h2>Register</h2>
+        <a href="/register">Register as Customer or Airline Staff</a>
+    </section>
+
+    <!-- Section for user login -->
+    <section>
+        <h2>Login</h2>
+        <a href="/login">Login as Customer or Airline Staff</a>
+    </section>
+</body>
+</html>

@@ -6,6 +6,24 @@ import AirlineStaff from '../models/AirlineStaff.mjs';
 
 const router = express.Router();
 
+// Route for the root path
+router.get('/', (req, res) => {
+    // Render the index.ejs file
+    res.render('public/index');
+});
+
+// Route to render the registration page
+router.get('/register', (req, res) => {
+    // Render the register.ejs file
+    res.render('public/register');
+});
+
+// Route to render the login page
+router.get('/login', (req, res) => {
+    // Render the login.ejs file
+    res.render('public/login');
+});
+
 // Route for user registration
 router.post('/register', async (req, res) => {
     const { userType, email, username, password, ...otherDetails } = req.body;

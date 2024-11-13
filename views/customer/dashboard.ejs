@@ -1,0 +1,30 @@
+<h1>Customer Dashboard</h1>
+
+<!-- Section to display booked flights -->
+<h2>My Flights</h2>
+<ul>
+    <% tickets.forEach(ticket => { %>
+        <li>
+            Flight: <%= ticket.flight_number %> - <%= ticket.Flight.arrival_airport %> to <%= ticket.Flight.departure_airport %>
+            on <%= ticket.departure_datetime %>
+        </li>
+    <% }) %>
+</ul>
+
+<!-- Form to give feedback -->
+<h2>Give Feedback</h2>
+<form action="/customer/give-feedback" method="post">
+    <label for="flight_number">Flight Number:</label>
+    <input type="text" id="flight_number" name="flight_number" required>
+
+    <label for="departure_datetime">Departure Date & Time:</label>
+    <input type="datetime-local" id="departure_datetime" name="departure_datetime" required>
+
+    <label for="rating">Rating:</label>
+    <input type="number" id="rating" name="rating" min="1" max="5" required>
+
+    <label for="comments">Comments:</label>
+    <textarea id="comments" name="comments"></textarea>
+
+    <button type="submit">Submit Feedback</button>
+</form>

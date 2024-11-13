@@ -1,7 +1,7 @@
 import express from 'express';
 import Flight from '../models/Flight.mjs'; // Import the Flight model
 import Rates from '../models/Rates.mjs'; // Import the Rates model
-import Maintenance from '../models/Maintenance.mjs'; // Import the Maintenance model
+import Maintenance from '../models/MaintenanceProcedure.mjs'; // Import the Maintenance model
 import Ticket from '../models/Ticket.mjs'; // Import the Ticket model
 import { Op } from 'sequelize'; // Import Sequelize operators
 

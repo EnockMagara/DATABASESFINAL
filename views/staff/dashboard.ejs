@@ -1,0 +1,38 @@
+<h1>Staff Dashboard</h1>
+
+<!-- Section to create a new flight -->
+<h2>Create New Flight</h2>
+<form action="/staff/create-flight" method="post">
+    <label for="airline_name">Airline Name:</label>
+    <input type="text" id="airline_name" name="airline_name" required>
+
+    <label for="flight_number">Flight Number:</label>
+    <input type="text" id="flight_number" name="flight_number" required>
+
+    <label for="departure_datetime">Departure Date & Time:</label>
+    <input type="datetime-local" id="departure_datetime" name="departure_datetime" required>
+
+    <label for="departure_airport">Departure Airport:</label>
+    <input type="text" id="departure_airport" name="departure_airport" required>
+
+    <label for="arrival_airport">Arrival Airport:</label>
+    <input type="text" id="arrival_airport" name="arrival_airport" required>
+
+    <label for="base_price">Base Price:</label>
+    <input type="number" id="base_price" name="base_price" required>
+
+    <label for="status">Status:</label>
+    <input type="text" id="status" name="status" required>
+
+    <button type="submit">Create Flight</button>
+</form>
+
+<!-- Section to view analytics -->
+<h2>Analytics</h2>
+<p>Total Revenue: <%= analytics.totalRevenue %></p>
+<h3>Frequent Customers</h3>
+<ul>
+    <% analytics.frequentCustomers.forEach(customer => { %>
+        <li><%= customer.email %> - <%= customer.ticket_count %> tickets</li>
+    <% }) %>
+</ul>
