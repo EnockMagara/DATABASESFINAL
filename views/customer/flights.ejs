@@ -19,16 +19,39 @@
 
 <script>
 document.getElementById('searchFlightsForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
     fetch('/customer/search-flights?' + new URLSearchParams(formData), {
-        method: 'GET'
+        method: 'GET' // Use GET method to fetch data
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
         const resultsDiv = document.getElementById('flightsResults');
-        resultsDiv.innerHTML = JSON.stringify(data, null, 2);
+        if (data.flights && Array.isArray(data.flights)) {
+            // Check if flights data is present and is an array
+            if (data.flights.length > 0) {
+                // If there are flights, display them
+                resultsDiv.innerHTML = data.flights.map(flight => 
+                    `<p>${flight.airline_name} - ${flight.flight_number} from ${flight.departure_airport_name} to ${flight.arrival_airport_name} on ${flight.departure_datetime}</p>`
+                ).join('');
+            } else {
+                // If no flights are found, display a message
+                resultsDiv.innerText = 'No flights found for the given criteria.';
+            }
+        } else {
+            // Handle unexpected response format
+            resultsDiv.innerText = 'Unexpected response format';
+        }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Log the error and display a user-friendly message
+        console.error('Error:', error);
+        document.getElementById('flightsResults').innerText = 'An error occurred while searching for flights';
+    });
 });
 </script>

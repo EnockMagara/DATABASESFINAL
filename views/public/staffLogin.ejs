@@ -20,11 +20,15 @@ document.getElementById('staffLoginForm').addEventListener('submit', function(ev
         },
         body: new URLSearchParams(formData)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.href = data.redirectUrl;
+    .then(response => {
+        if (response.redirected) {
+            window.location.href = response.url;
         } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && !data.success) {
             alert('Login failed: ' + data.message);
         }
     })

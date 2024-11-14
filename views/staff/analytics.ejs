@@ -18,28 +18,58 @@
 // AJAX for viewing frequent customer
 document.getElementById('frequentCustomerButton').addEventListener('click', function() {
     fetch('/staff/frequent-customer', {
-        method: 'GET'
+        method: 'GET' // Use GET method to fetch data
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
-        document.getElementById('frequentCustomerResult').innerText = `${data.email} - ${data.ticket_count} tickets`;
+        if (data.email && data.ticket_count !== undefined) {
+            // Display the frequent customer data if present in the response
+            document.getElementById('frequentCustomerResult').innerText = `${data.email} - ${data.ticket_count} tickets`;
+        } else {
+            // Handle case where expected data is not present in the response
+            document.getElementById('frequentCustomerResult').innerText = 'Unexpected response format';
+        }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Log the error and display a user-friendly message
+        console.error('Error:', error);
+        document.getElementById('frequentCustomerResult').innerText = 'An error occurred while fetching frequent customer data';
+    });
 });
 
 // AJAX for viewing customer flights
 document.getElementById('customerFlightsForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
-    const email = document.getElementById('customer_email').value;
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
+    const email = document.getElementById('customer_email').value; // Get the email value from the input
     fetch(`/staff/customer-flights/${email}`, {
-        method: 'GET'
+        method: 'GET' // Use GET method to fetch data
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
         const resultDiv = document.getElementById('customerFlightsResult');
-        resultDiv.innerHTML = data.map(flight => `<p>${flight.flight_number} - ${flight.departure_airport} to ${flight.arrival_airport} on ${flight.departure_datetime}</p>`).join('');
+        if (Array.isArray(data) && data.length > 0) {
+            // Display the flights data if present in the response
+            resultDiv.innerHTML = data.map(flight => `<p>${flight.flight_number} - ${flight.departure_airport} to ${flight.arrival_airport} on ${flight.departure_datetime}</p>`).join('');
+        } else {
+            // Handle case where no flights are found or unexpected response format
+            resultDiv.innerText = 'No flights found or unexpected response format';
+        }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Log the error and display a user-friendly message
+        console.error('Error:', error);
+        document.getElementById('customerFlightsResult').innerText = 'An error occurred while fetching customer flights';
+    });
 });
 </script>

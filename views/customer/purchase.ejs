@@ -25,19 +25,35 @@
 
 <script>
 document.getElementById('purchaseTicketForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
     fetch('/customer/purchase-ticket', {
-        method: 'POST',
+        method: 'POST', // Use POST method to send data
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
         },
-        body: new URLSearchParams(formData)
+        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
-        document.getElementById('purchaseResult').innerText = data.message;
+        const purchaseResultDiv = document.getElementById('purchaseResult');
+        if (data.message) {
+            // Check if the message is present in the response
+            purchaseResultDiv.innerText = data.message; // Display the message from the response
+        } else {
+            // Handle unexpected response format
+            purchaseResultDiv.innerText = 'Unexpected response format';
+        }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Log the error and display a user-friendly message
+        console.error('Error:', error);
+        document.getElementById('purchaseResult').innerText = 'An error occurred while processing your purchase';
+    });
 });
 </script>

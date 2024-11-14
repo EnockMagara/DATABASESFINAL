@@ -45,40 +45,54 @@
 
 <script>
 document.getElementById('giveFeedbackForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
     fetch('/customer/give-feedback', {
-        method: 'POST',
+        method: 'POST', // Use POST method to send data
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
         },
-        body: new URLSearchParams(formData)
+        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
+        // Check if the message is present in the response
         document.getElementById('feedbackResult').innerText = data.message || 'Feedback submitted successfully!';
     })
     .catch(error => {
+        // Log the error and display a user-friendly message
         console.error('Error:', error);
         document.getElementById('feedbackResult').innerText = 'An error occurred while submitting feedback.';
     });
 });
 
 document.getElementById('cancelTripForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
     fetch('/customer/cancel-trip', {
-        method: 'POST',
+        method: 'POST', // Use POST method to send data
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
         },
-        body: new URLSearchParams(formData)
+        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
+        // Check if the message is present in the response
         document.getElementById('cancelResult').innerText = data.message || 'Trip cancelled successfully!';
     })
     .catch(error => {
+        // Log the error and display a user-friendly message
         console.error('Error:', error);
         document.getElementById('cancelResult').innerText = 'An error occurred while cancelling the trip.';
     });

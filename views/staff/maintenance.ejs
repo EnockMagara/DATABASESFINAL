@@ -10,19 +10,34 @@
 <script>
 // AJAX for scheduling maintenance
 document.getElementById('scheduleMaintenanceForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
     fetch('/staff/schedule-maintenance', {
-        method: 'POST',
+        method: 'POST', // Use POST method to send data
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for form data
         },
-        body: new URLSearchParams(formData)
+        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+        }
+        return response.json(); // Parse the response as JSON
+    })
     .then(data => {
-        document.getElementById('scheduleMaintenanceResult').innerText = data.message;
+        if (data.message) {
+            // Display the message from the server response
+            document.getElementById('scheduleMaintenanceResult').innerText = data.message;
+        } else {
+            // Handle case where message is not present in the response
+            document.getElementById('scheduleMaintenanceResult').innerText = 'Unexpected response format';
+        }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Log the error and display a user-friendly message
+        console.error('Error:', error);
+        document.getElementById('scheduleMaintenanceResult').innerText = 'An error occurred while scheduling maintenance';
+    });
 });
 </script>

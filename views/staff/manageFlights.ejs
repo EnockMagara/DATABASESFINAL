@@ -3,8 +3,12 @@
 <!-- Section to create a new flight -->
 <h2>Create New Flight</h2>
 <form id="createFlightForm">
-    <!-- Form fields for creating a flight -->
-    <!-- ... -->
+    <input type="text" name="flight_number" placeholder="Flight Number" required>
+    <input type="datetime-local" name="departure_datetime" placeholder="Departure DateTime" required>
+    <input type="text" name="departure_airport" placeholder="Departure Airport" required>
+    <input type="text" name="arrival_airport" placeholder="Arrival Airport" required>
+    <input type="number" name="base_price" placeholder="Base Price" required>
+    <input type="text" name="status" placeholder="Status" required>
     <button type="submit">Create Flight</button>
 </form>
 <div id="createFlightResult"></div>
@@ -12,8 +16,12 @@
 <!-- Section to update a flight -->
 <h2>Update Flight</h2>
 <form id="updateFlightForm">
-    <!-- Form fields for updating a flight -->
-    <!-- ... -->
+    <input type="text" id="update_flight_number" name="flight_number" placeholder="Flight Number" required>
+    <input type="datetime-local" id="update_departure_datetime" name="departure_datetime" placeholder="Departure DateTime" required>
+    <input type="text" name="departure_airport" placeholder="Departure Airport" required>
+    <input type="text" name="arrival_airport" placeholder="Arrival Airport" required>
+    <input type="number" name="base_price" placeholder="Base Price" required>
+    <input type="text" name="status" placeholder="Status" required>
     <button type="submit">Update Flight</button>
 </form>
 <div id="updateFlightResult"></div>
@@ -26,8 +34,9 @@
 <!-- Section to change flight status -->
 <h2>Change Flight Status</h2>
 <form id="changeFlightStatusForm">
-    <!-- Form fields for changing flight status -->
-    <!-- ... -->
+    <input type="text" id="status_flight_number" name="flight_number" placeholder="Flight Number" required>
+    <input type="datetime-local" id="status_departure_datetime" name="departure_datetime" placeholder="Departure DateTime" required>
+    <input type="text" name="status" placeholder="New Status" required>
     <button type="submit">Change Status</button>
 </form>
 <div id="changeFlightStatusResult"></div>
@@ -46,6 +55,7 @@ document.getElementById('createFlightForm').addEventListener('submit', function(
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Create flight response:', data);
         document.getElementById('createFlightResult').innerText = data.message;
     })
     .catch(error => console.error('Error:', error));
@@ -66,6 +76,7 @@ document.getElementById('updateFlightForm').addEventListener('submit', function(
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Update flight response:', data);
         document.getElementById('updateFlightResult').innerText = data.message;
     })
     .catch(error => console.error('Error:', error));
@@ -76,12 +87,25 @@ document.getElementById('viewFlightsButton').addEventListener('click', function(
     fetch('/staff/view-flights', {
         method: 'GET'
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.text().then(text => {
+            console.log('Response text:', text);
+            if (!response.ok) {
+                throw new Error(text);
+            }
+            return JSON.parse(text);
+        });
+    })
     .then(data => {
+        console.log('View flights response:', data);
         const resultDiv = document.getElementById('viewFlightsResult');
         resultDiv.innerHTML = data.map(flight => `<p>${flight.flight_number} - ${flight.departure_airport} to ${flight.arrival_airport} on ${flight.departure_datetime}</p>`).join('');
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('viewFlightsResult').innerText = error.message;
+    });
 });
 
 // AJAX for changing flight status
@@ -97,10 +121,23 @@ document.getElementById('changeFlightStatusForm').addEventListener('submit', fun
         },
         body: new URLSearchParams(formData)
     })
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('changeFlightStatusResult').innerText = data.message;
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.text().then(text => {
+            console.log('Response text:', text);
+            if (!response.ok) {
+                throw new Error(text);
+            }
+            return JSON.parse(text);
+        });
     })
-    .catch(error => console.error('Error:', error));
+    .then(data => {
+        console.log('Change flight status response:', data);
+        document.getElementById('changeFlightStatusResult').innerText = data.message || 'Operation completed';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('changeFlightStatusResult').innerText = error.message;
+    });
 });
 </script>

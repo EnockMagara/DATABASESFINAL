@@ -7,7 +7,6 @@ import ensureAuthenticated from '../middleware/authMiddleware.mjs'; // Import yo
 
 const router = express.Router();
 
-
 // Route to render the ratings page
 router.get('/ratings', ensureAuthenticated, (req, res) => {
     res.render('customer/ratings', { user: req.user, tickets: [] }); // Pass user and tickets data
@@ -28,7 +27,7 @@ router.get('/spending', ensureAuthenticated, (req, res) => {
     res.render('customer/spending');
 });
 
-
+// Route to search for flights
 router.get('/search-flights', async (req, res) => {
     const { source, destination, departureDate, returnDate } = req.query;
 
@@ -96,10 +95,11 @@ router.get('/search-flights', async (req, res) => {
 
         res.json({ outboundFlights, returnFlights });
     } catch (error) {
-        res.status(500).send('Error searching for flights');
+        res.status(500).json({ message: 'Error searching for flights' });
     }
 });
 
+// Route to purchase a ticket
 router.post('/purchase-ticket', async (req, res) => {
     const { airline_name, flight_number, departure_datetime, email, sold_price, card_number, name_on_card, card_expiration_date, passenger_first_name, passenger_last_name, passenger_dob } = req.body;
 
@@ -115,10 +115,11 @@ router.post('/purchase-ticket', async (req, res) => {
 
         res.status(201).json({ message: 'Ticket purchased successfully', ticketId: result });
     } catch (error) {
-        res.status(500).send('Error purchasing ticket');
+        res.status(500).json({ message: 'Error purchasing ticket' });
     }
 });
 
+// Route to cancel a trip
 router.post('/cancel-trip', async (req, res) => {
     const { ticket_id, email } = req.body;
 
@@ -137,13 +138,14 @@ router.post('/cancel-trip', async (req, res) => {
         if (result.affectedRows > 0) {
             res.json({ message: 'Trip cancelled successfully' });
         } else {
-            res.status(400).send('Unable to cancel trip. Ensure the trip is more than 24 hours away.');
+            res.status(400).json({ message: 'Unable to cancel trip. Ensure the trip is more than 24 hours away.' });
         }
     } catch (error) {
-        res.status(500).send('Error cancelling trip');
+        res.status(500).json({ message: 'Error cancelling trip' });
     }
 });
 
+// Route to give feedback
 router.post('/give-feedback', async (req, res) => {
     const { email, airline_name, flight_number, departure_datetime, rating, comments } = req.body;
 
@@ -159,10 +161,11 @@ router.post('/give-feedback', async (req, res) => {
 
         res.status(201).json({ message: 'Feedback submitted successfully' });
     } catch (error) {
-        res.status(500).send('Error submitting feedback');
+        res.status(500).json({ message: 'Error submitting feedback' });
     }
 });
 
+// Route to get total spending for the past year
 router.get('/spending/total-year', async (req, res) => {
     const { email } = req.user; // Assume email is extracted from session or JWT
 
@@ -181,12 +184,13 @@ router.get('/spending/total-year', async (req, res) => {
             }
         );
 
-        res.json(result[0]);
+        res.json(result[0] || {});
     } catch (error) {
-        res.status(500).send('Error retrieving total spending for the past year');
+        res.status(500).json({ message: 'Error retrieving total spending for the past year' });
     }
 });
 
+// Route to get monthly spending for the last 6 months
 router.get('/spending/monthly-last-6-months', async (req, res) => {
     const { email } = req.user;
 
@@ -212,10 +216,11 @@ router.get('/spending/monthly-last-6-months', async (req, res) => {
 
         res.json(results);
     } catch (error) {
-        res.status(500).send('Error retrieving monthly spending for the last 6 months');
+        res.status(500).json({ message: 'Error retrieving monthly spending for the last 6 months' });
     }
 });
 
+// Route to get total and monthly spending for a specified date range
 router.get('/spending/total-range', async (req, res) => {
     const { email } = req.user;
     const { startDate, endDate } = req.query; // Assume dates are passed as query parameters
@@ -254,9 +259,9 @@ router.get('/spending/total-range', async (req, res) => {
             }
         );
 
-        res.json({ total: totalResult[0], monthly: monthlyResults });
+        res.json({ total: totalResult[0] || {}, monthly: monthlyResults });
     } catch (error) {
-        res.status(500).send('Error retrieving spending for the specified date range');
+        res.status(500).json({ message: 'Error retrieving spending for the specified date range' });
     }
 });
 

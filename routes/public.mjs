@@ -67,13 +67,15 @@ router.get('/search-flights', async (req, res) => {
                     type: sequelize.QueryTypes.SELECT
                 }
             );
+            // Return both flights and returnFlights as JSON
             return res.json({ flights, returnFlights });
         }
 
-        // Send flight data as response
-        res.json(flights);
+        // Send flight data as response, even if empty
+        res.json({ flights });
     } catch (error) {
-        res.status(500).send('Internal server error');
+        // Return error message as JSON
+        res.status(500).json({ message: 'Error searching for flights' });
     }
 });
 
@@ -99,14 +101,15 @@ router.get('/flight-status', async (req, res) => {
             }
         );
 
-        // Send status as response
+        // Send status as response, or an empty object if not found
         if (flight) {
             res.json({ status: flight.status });
         } else {
-            res.status(404).send('Flight not found');
+            res.status(404).json({ message: 'Flight not found' });
         }
     } catch (error) {
-        res.status(500).send('Internal server error');
+        // Return error message as JSON
+        res.status(500).json({ message: 'Error retrieving flight status' });
     }
 });
 

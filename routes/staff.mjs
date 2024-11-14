@@ -4,13 +4,45 @@ import Rates from '../models/Rates.mjs'; // Import the Rates model
 import Maintenance from '../models/MaintenanceProcedure.mjs'; // Import the Maintenance model
 import Ticket from '../models/Ticket.mjs'; // Import the Ticket model
 import { Op } from 'sequelize'; // Import Sequelize operators
+import ensureAuthenticated from '../middleware/authMiddleware.mjs'; // Ensure this middleware is imported
+import sequelize from '../config/db.mjs'; // Import the sequelize instance
 
 const router = express.Router();
 
+// Route to render the manage flights page
+router.get('/manage-flights', ensureAuthenticated, (req, res) => {
+    res.render('staff/manageFlights'); // Render the manageFlights.ejs view
+});
+
+// Route to render the analytics page
+router.get('/analytics', ensureAuthenticated, (req, res) => {
+    res.render('staff/analytics'); // Render the analytics.ejs view
+});
+
+// Route to render the maintenance page
+router.get('/maintenance', ensureAuthenticated, (req, res) => {
+    res.render('staff/maintenance'); // Render the maintenance.ejs view
+});
+
+// Route to render the revenue page
+router.get('/revenue', ensureAuthenticated, (req, res) => {
+    res.render('staff/revenue'); // Render the revenue.ejs view
+});
+
 // Route to create a new flight
-router.post('/create-flight', async (req, res) => {
-    const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
+router.post('/create-flight', ensureAuthenticated, async (req, res) => {
+    const { airline_name } = req.user;
     const { flight_number, departure_datetime, departure_airport, arrival_airport, base_price, status } = req.body;
+
+    console.log('Creating flight with:', {
+        airline_name,
+        flight_number,
+        departure_datetime,
+        departure_airport,
+        arrival_airport,
+        base_price,
+        status
+    });
 
     try {
         const [result] = await sequelize.query(
@@ -24,20 +56,23 @@ router.post('/create-flight', async (req, res) => {
 
         res.status(201).json({ message: 'Flight created successfully', flightId: result });
     } catch (error) {
-        res.status(500).send('Error creating flight');
+        console.error('Error creating flight:', error); // Log the error for debugging
+        if (error.original && error.original.code === 'ER_DUP_ENTRY') {
+            // Handle duplicate entry error
+            res.status(409).json({ message: 'Flight already exists' });
+        } else {
+            res.status(500).json({ message: 'Error creating flight' });
+        }
     }
 });
 
 // Route to update an existing flight
-router.put('/update-flight/:flight_number/:departure_datetime', async (req, res) => {
-    // Extract flight number and departure datetime from URL parameters
+router.put('/update-flight/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
-    // Extract updated flight details from request body
     const { airline_name, departure_airport, arrival_airport, base_price, status } = req.body;
 
     try {
-        // Execute raw SQL query to update the flight
-        const [result] = await sequelize.query(
+        const result = await sequelize.query(
             `UPDATE Flight
             SET airline_name = ?, departure_airport = ?, arrival_airport = ?, base_price = ?, status = ?
             WHERE flight_number = ? AND departure_datetime = ?`,
@@ -47,20 +82,22 @@ router.put('/update-flight/:flight_number/:departure_datetime', async (req, res)
             }
         );
 
+        console.log('Full update result:', result); // Log the full result
+
         // Check if any rows were affected
-        if (result.affectedRows > 0) {
+        if (result[1] > 0) { // Adjusted to check the second element
             res.json({ message: 'Flight updated successfully' });
         } else {
-            res.status(404).send('Flight not found');
+            res.status(404).json({ message: 'Flight not found' });
         }
     } catch (error) {
-        // Handle errors and send error response
-        res.status(500).send('Error updating flight');
+        console.error('Error updating flight:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error updating flight' });
     }
 });
 
 // Route to view flight ratings
-router.get('/flight-ratings/:flight_number/:departure_datetime', async (req, res) => {
+router.get('/flight-ratings/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
     const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
 
@@ -91,12 +128,13 @@ router.get('/flight-ratings/:flight_number/:departure_datetime', async (req, res
 
         res.json(ratings);
     } catch (error) {
-        res.status(500).send('Error retrieving flight ratings');
+        console.error('Error retrieving flight ratings:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving flight ratings' });
     }
 });
 
 // Route to schedule maintenance
-router.post('/schedule-maintenance', async (req, res) => {
+router.post('/schedule-maintenance', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
     const { airplane_id, start_datetime, end_datetime, description } = req.body;
 
@@ -112,18 +150,17 @@ router.post('/schedule-maintenance', async (req, res) => {
 
         res.status(201).json({ message: 'Maintenance scheduled successfully', maintenanceId: result });
     } catch (error) {
-        res.status(500).send('Error scheduling maintenance');
+        console.error('Error scheduling maintenance:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error scheduling maintenance' });
     }
 });
 
-
-
-router.get('/view-flights', async (req, res) => {
+// Route to view flights
+router.get('/view-flights', ensureAuthenticated, async (req, res) => {
     const { username } = req.user; // Assume username is extracted from session or JWT
     const { startDate, endDate, source, destination } = req.query; // Optional query parameters
 
     try {
-        // Default to showing future flights for the next 30 days
         const [flights] = await sequelize.query(
             `SELECT 
                 F.airline_name,
@@ -136,9 +173,9 @@ router.get('/view-flights', async (req, res) => {
             FROM 
                 Flight F
             JOIN 
-                AirlineStaff AS ON F.airline_name = AS.airline_name
+                AirlineStaff A ON F.airline_name = A.airline_name
             WHERE 
-                AS.username = ?
+                A.username = ?
                 AND F.departure_datetime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY)
                 ${startDate && endDate ? 'AND F.departure_datetime BETWEEN ? AND ?' : ''}
                 ${source ? 'AND (F.departure_airport = ? OR A1.city = ?)' : ''}
@@ -154,13 +191,16 @@ router.get('/view-flights', async (req, res) => {
             }
         );
 
+        console.log('Flights retrieved:', flights); // Log the flights retrieved
         res.json(flights);
     } catch (error) {
-        res.status(500).send('Error retrieving flights');
+        console.error('Error retrieving flights:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving flights' });
     }
 });
 
-router.get('/flight-customers/:flight_number/:departure_datetime', async (req, res) => {
+// Route to view flight customers
+router.get('/flight-customers/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
     const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
 
@@ -189,17 +229,19 @@ router.get('/flight-customers/:flight_number/:departure_datetime', async (req, r
 
         res.json(customers);
     } catch (error) {
-        res.status(500).send('Error retrieving flight customers');
+        console.error('Error retrieving flight customers:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving flight customers' });
     }
 });
 
-router.put('/change-flight-status/:flight_number/:departure_datetime', async (req, res) => {
+// Route to change flight status
+router.put('/change-flight-status/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
     const { status } = req.body;
-    const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
+    const { airline_name } = req.user;
 
     try {
-        const [result] = await sequelize.query(
+        const result = await sequelize.query(
             `UPDATE Flight
             SET status = ?
             WHERE airline_name = ?
@@ -211,17 +253,22 @@ router.put('/change-flight-status/:flight_number/:departure_datetime', async (re
             }
         );
 
-        if (result.affectedRows > 0) {
+        console.log('Update result:', result); // Log the update result
+
+        // Check if any rows were affected
+        if (result[1] > 0) { // Check the second element for affected rows
             res.json({ message: 'Flight status updated successfully' });
         } else {
-            res.status(404).send('Flight not found');
+            res.status(404).json({ message: 'Flight not found' });
         }
     } catch (error) {
-        res.status(500).send('Error updating flight status');
+        console.error('Error updating flight status:', error);
+        res.status(500).json({ message: 'Error updating flight status' });
     }
 });
 
-router.post('/add-airplane', async (req, res) => {
+// Route to add an airplane
+router.post('/add-airplane', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
     const { airplane_id, model, capacity } = req.body;
 
@@ -237,12 +284,13 @@ router.post('/add-airplane', async (req, res) => {
 
         res.status(201).json({ message: 'Airplane added successfully', airplaneId: result });
     } catch (error) {
-        res.status(500).send('Error adding airplane');
+        console.error('Error adding airplane:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error adding airplane' });
     }
 });
 
 // Route to view all airplanes owned by the airline
-router.get('/view-airplanes', async (req, res) => {
+router.get('/view-airplanes', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user;
 
     try {
@@ -256,11 +304,13 @@ router.get('/view-airplanes', async (req, res) => {
 
         res.json(airplanes);
     } catch (error) {
-        res.status(500).send('Error retrieving airplanes');
+        console.error('Error retrieving airplanes:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving airplanes' });
     }
 });
 
-router.post('/add-airport', async (req, res) => {
+// Route to add an airport
+router.post('/add-airport', ensureAuthenticated, async (req, res) => {
     const { airport_code, name, city, country } = req.body;
 
     try {
@@ -275,11 +325,13 @@ router.post('/add-airport', async (req, res) => {
 
         res.status(201).json({ message: 'Airport added successfully', airportCode: result });
     } catch (error) {
-        res.status(500).send('Error adding airport');
+        console.error('Error adding airport:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error adding airport' });
     }
 });
 
-router.get('/frequent-customer', async (req, res) => {
+// Route to view frequent customer
+router.get('/frequent-customer', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
 
     try {
@@ -309,11 +361,13 @@ router.get('/frequent-customer', async (req, res) => {
 
         res.json(frequentCustomer);
     } catch (error) {
-        res.status(500).send('Error retrieving frequent customer');
+        console.error('Error retrieving frequent customer:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving frequent customer' });
     }
 });
 
-router.get('/customer-flights/:email', async (req, res) => {
+// Route to view customer flights
+router.get('/customer-flights/:email', ensureAuthenticated, async (req, res) => {
     const { email } = req.params;
     const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
 
@@ -345,11 +399,13 @@ router.get('/customer-flights/:email', async (req, res) => {
 
         res.json(flights);
     } catch (error) {
-        res.status(500).send('Error retrieving customer flights');
+        console.error('Error retrieving customer flights:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving customer flights' });
     }
 });
 
-router.get('/earned-revenue', async (req, res) => {
+// Route to view earned revenue
+router.get('/earned-revenue', ensureAuthenticated, async (req, res) => {
     try {
         const [revenueLastMonth] = await sequelize.query(
             `SELECT 
@@ -377,7 +433,8 @@ router.get('/earned-revenue', async (req, res) => {
 
         res.json({ revenueLastMonth, revenueLastYear });
     } catch (error) {
-        res.status(500).send('Error retrieving earned revenue');
+        console.error('Error retrieving earned revenue:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving earned revenue' });
     }
 });
 
