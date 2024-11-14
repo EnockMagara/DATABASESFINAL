@@ -67,7 +67,12 @@
         fetch('/public/search-flights?' + new URLSearchParams(formData), {
             method: 'GET'
         })
-        .then(response => response.json()) // Parse JSON response
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok'); // Throw an error if response is not ok
+            }
+            return response.json(); // Parse JSON response
+        })
         .then(data => {
             const resultDiv = document.getElementById('flightsResult'); // Get result div
             if (data.flights && data.flights.length > 0) {
@@ -94,7 +99,12 @@
         fetch('/public/flight-status?' + new URLSearchParams(formData), {
             method: 'GET'
         })
-        .then(response => response.json()) // Parse JSON response
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok'); // Throw an error if response is not ok
+            }
+            return response.json(); // Parse JSON response
+        })
         .then(data => {
             const resultDiv = document.getElementById('flightStatusResult'); // Get result div
             if (data.status) {

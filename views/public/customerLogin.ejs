@@ -11,27 +11,40 @@
 
 <script>
 document.getElementById('customerLoginForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const formData = new FormData(this);
+    event.preventDefault(); // Prevent the default form submission
+    const formData = new FormData(this); // Create a FormData object from the form
     fetch('/login', {
-        method: 'POST',
+        method: 'POST', // Use POST method to send data
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
         },
-        body: new URLSearchParams(formData)
+        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
     })
     .then(response => {
         if (response.redirected) {
+            // If the response is redirected, navigate to the new URL
             window.location.href = response.url;
         } else {
+            // Otherwise, parse the response as JSON
             return response.json();
         }
     })
     .then(data => {
-        if (data && !data.success) {
-            alert('Login failed: ' + data.message);
+        if (data) {
+            // Check if the data object is present
+            if (!data.success) {
+                // If login is not successful, alert the user with the message
+                alert('Login failed: ' + data.message);
+            } else {
+                // If login is successful, handle success (e.g., redirect or show a message)
+                alert('Login successful!');
+            }
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        // Log the error and alert the user about the error
+        console.error('Error:', error);
+        alert('An error occurred during login. Please try again.');
+    });
 });
 </script>
