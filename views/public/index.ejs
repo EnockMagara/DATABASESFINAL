@@ -11,7 +11,7 @@
     <!-- Section for viewing public information -->
     <section>
         <h2>Search for Flights</h2>
-        <form action="/public/search-flights" method="get">
+        <form id="searchFlightsForm">
             <label for="source">Source Airport:</label>
             <input type="text" id="source" name="source" required>
 
@@ -26,9 +26,10 @@
 
             <button type="submit">Search Flights</button>
         </form>
+        <div id="flightsResult"></div>
 
         <h2>Check Flight Status</h2>
-        <form action="/public/flight-status" method="get">
+        <form id="checkFlightStatusForm">
             <label for="airline">Airline Name:</label>
             <input type="text" id="airline" name="airline" required>
 
@@ -40,6 +41,7 @@
 
             <button type="submit">Check Flight Status</button>
         </form>
+        <div id="flightStatusResult"></div>
     </section>
 
     <!-- Section for user registration -->
@@ -51,7 +53,63 @@
     <!-- Section for user login -->
     <section>
         <h2>Login</h2>
-        <a href="/login">Login as Customer or Airline Staff</a>
+        <!-- Separate links for customer and staff login -->
+        <a href="/customer-login">Login as Customer</a>
+        <a href="/staff-login">Login as Airline Staff</a>
     </section>
+
+    <script>
+    // AJAX for searching flights
+    document.getElementById('searchFlightsForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+        const formData = new FormData(this); // Collect form data
+        // Fetch request to search flights
+        fetch('/public/search-flights?' + new URLSearchParams(formData), {
+            method: 'GET'
+        })
+        .then(response => response.json()) // Parse JSON response
+        .then(data => {
+            const resultDiv = document.getElementById('flightsResult'); // Get result div
+            if (data.flights && data.flights.length > 0) {
+                // Display flights if found
+                resultDiv.innerHTML = data.flights.map(flight => `
+                    <p>${flight.airline_name} Flight ${flight.flight_number} from ${flight.departure_city} to ${flight.arrival_city} on ${new Date(flight.departure_datetime).toLocaleString()}</p>
+                `).join('');
+            } else {
+                // Display message if no flights found
+                resultDiv.innerHTML = '<p>No flights found.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error); // Log error
+            document.getElementById('flightsResult').innerText = 'An error occurred while searching for flights.'; // Display error message
+        });
+    });
+
+    // AJAX for checking flight status
+    document.getElementById('checkFlightStatusForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+        const formData = new FormData(this); // Collect form data
+        // Fetch request to check flight status
+        fetch('/public/flight-status?' + new URLSearchParams(formData), {
+            method: 'GET'
+        })
+        .then(response => response.json()) // Parse JSON response
+        .then(data => {
+            const resultDiv = document.getElementById('flightStatusResult'); // Get result div
+            if (data.status) {
+                // Display flight status if found
+                resultDiv.innerHTML = `<p>Flight Status: ${data.status}</p>`;
+            } else {
+                // Display message if flight not found
+                resultDiv.innerHTML = '<p>Flight not found.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error); // Log error
+            document.getElementById('flightStatusResult').innerText = 'An error occurred while checking flight status.'; // Display error message
+        });
+    });
+    </script>
 </body>
 </html>

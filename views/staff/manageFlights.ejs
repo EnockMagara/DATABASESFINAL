@@ -1,0 +1,106 @@
+<h1>Manage Flights</h1>
+
+<!-- Section to create a new flight -->
+<h2>Create New Flight</h2>
+<form id="createFlightForm">
+    <!-- Form fields for creating a flight -->
+    <!-- ... -->
+    <button type="submit">Create Flight</button>
+</form>
+<div id="createFlightResult"></div>
+
+<!-- Section to update a flight -->
+<h2>Update Flight</h2>
+<form id="updateFlightForm">
+    <!-- Form fields for updating a flight -->
+    <!-- ... -->
+    <button type="submit">Update Flight</button>
+</form>
+<div id="updateFlightResult"></div>
+
+<!-- Section to view flights -->
+<h2>View Flights</h2>
+<button id="viewFlightsButton">View Flights</button>
+<div id="viewFlightsResult"></div>
+
+<!-- Section to change flight status -->
+<h2>Change Flight Status</h2>
+<form id="changeFlightStatusForm">
+    <!-- Form fields for changing flight status -->
+    <!-- ... -->
+    <button type="submit">Change Status</button>
+</form>
+<div id="changeFlightStatusResult"></div>
+
+<script>
+// AJAX for creating a new flight
+document.getElementById('createFlightForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    fetch('/staff/create-flight', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('createFlightResult').innerText = data.message;
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+// AJAX for updating a flight
+document.getElementById('updateFlightForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    const flightNumber = document.getElementById('update_flight_number').value;
+    const departureDatetime = document.getElementById('update_departure_datetime').value;
+    fetch(`/staff/update-flight/${flightNumber}/${departureDatetime}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('updateFlightResult').innerText = data.message;
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+// AJAX for viewing flights
+document.getElementById('viewFlightsButton').addEventListener('click', function() {
+    fetch('/staff/view-flights', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('viewFlightsResult');
+        resultDiv.innerHTML = data.map(flight => `<p>${flight.flight_number} - ${flight.departure_airport} to ${flight.arrival_airport} on ${flight.departure_datetime}</p>`).join('');
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+// AJAX for changing flight status
+document.getElementById('changeFlightStatusForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    const flightNumber = document.getElementById('status_flight_number').value;
+    const departureDatetime = document.getElementById('status_departure_datetime').value;
+    fetch(`/staff/change-flight-status/${flightNumber}/${departureDatetime}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('changeFlightStatusResult').innerText = data.message;
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>

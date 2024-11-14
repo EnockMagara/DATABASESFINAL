@@ -1,0 +1,28 @@
+<h1>Schedule Maintenance</h1>
+
+<form id="scheduleMaintenanceForm">
+    <!-- Form fields for scheduling maintenance -->
+    <!-- ... -->
+    <button type="submit">Schedule Maintenance</button>
+</form>
+<div id="scheduleMaintenanceResult"></div>
+
+<script>
+// AJAX for scheduling maintenance
+document.getElementById('scheduleMaintenanceForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    fetch('/staff/schedule-maintenance', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('scheduleMaintenanceResult').innerText = data.message;
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>

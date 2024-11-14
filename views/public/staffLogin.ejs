@@ -18,12 +18,12 @@ document.getElementById('staffLoginForm').addEventListener('submit', function(ev
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams(new FormData(this))
+        body: new URLSearchParams(formData)
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            window.location.href = '/home';
+            window.location.href = data.redirectUrl;
         } else {
             alert('Login failed: ' + data.message);
         }

@@ -5,6 +5,8 @@ import Customer from '../models/Customer.mjs';
 import AirlineStaff from '../models/AirlineStaff.mjs';
 import Ticket from '../models/Ticket.mjs';
 import Flight from '../models/Flight.mjs';
+import sequelize from '../config/db.mjs';
+import ensureAuthenticated from '../middleware/authMiddleware.mjs';
 
 const router = express.Router();
 
@@ -31,16 +33,32 @@ router.get('/staff-login', (req, res) => {
 });
 
 // Route to render the customer dashboard
-router.get('/customer/dashboard', async (req, res) => {
+router.get('/customer/dashboard', ensureAuthenticated, async (req, res) => {
     try {
-        // Fetch tickets for the logged-in customer
-        const tickets = await Ticket.findAll({
-            where: { email: req.user.email },
-            include: [{ model: Flight }] // Include related Flight data
+        // Use raw SQL to fetch tickets and related flight data
+        const [tickets] = await sequelize.query(`
+            SELECT 
+                Ticket.*, 
+                Flight.airline_name AS 'Flight.airline_name', 
+                Flight.flight_number AS 'Flight.flight_number', 
+                Flight.departure_datetime AS 'Flight.departure_datetime', 
+                Flight.departure_airport AS 'Flight.departure_airport', 
+                Flight.arrival_airport AS 'Flight.arrival_airport', 
+                Flight.base_price AS 'Flight.base_price', 
+                Flight.status AS 'Flight.status'
+            FROM Ticket
+            LEFT JOIN Flight ON 
+                Ticket.airline_name = Flight.airline_name AND 
+                Ticket.flight_number = Flight.flight_number AND 
+                Ticket.departure_datetime = Flight.departure_datetime
+            WHERE Ticket.email = :email
+        `, {
+            replacements: { email: req.user.email }, // Use replacements to prevent SQL injection
+            type: sequelize.QueryTypes.SELECT // Specify the query type
         });
 
-        // Render the customer dashboard view with tickets
-        res.render('customer/dashboard', { user: req.user, tickets });
+        // Render the customer navigation view with tickets
+        res.render('customer/navigation', { user: req.user, tickets });
     } catch (error) {
         console.error('Error fetching tickets:', error);
         res.status(500).send('Error loading dashboard');
@@ -94,7 +112,7 @@ router.post('/register', async (req, res) => {
             res.redirect('/staff-login');
         }
     } catch (error) {
-        // Handle errors and send error response
+        console.error('Error registering user:', error);
         res.status(500).send('Error registering user');
     }
 });
@@ -137,8 +155,14 @@ router.post('/login', (req, res, next) => {
 
 // Route for user logout
 router.get('/logout', (req, res) => {
-    req.logout(); // Destroy user session
-    res.redirect('/login'); // Redirect to login page
+    req.logout((err) => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.status(500).send('Error logging out');
+        }
+        // Redirect to goodbye page or login page
+        res.redirect('/goodbye'); 
+    });
 });
 
 export default router;

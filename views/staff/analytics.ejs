@@ -1,0 +1,45 @@
+<h1>View Analytics</h1>
+
+<!-- Section to view frequent customer -->
+<h2>Frequent Customer</h2>
+<button id="frequentCustomerButton">View Frequent Customer</button>
+<div id="frequentCustomerResult"></div>
+
+<!-- Section to view customer flights -->
+<h2>Customer Flights</h2>
+<form id="customerFlightsForm">
+    <label for="customer_email">Customer Email:</label>
+    <input type="email" id="customer_email" name="email" required>
+    <button type="submit">View Flights</button>
+</form>
+<div id="customerFlightsResult"></div>
+
+<script>
+// AJAX for viewing frequent customer
+document.getElementById('frequentCustomerButton').addEventListener('click', function() {
+    fetch('/staff/frequent-customer', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('frequentCustomerResult').innerText = `${data.email} - ${data.ticket_count} tickets`;
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+// AJAX for viewing customer flights
+document.getElementById('customerFlightsForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    const email = document.getElementById('customer_email').value;
+    fetch(`/staff/customer-flights/${email}`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('customerFlightsResult');
+        resultDiv.innerHTML = data.map(flight => `<p>${flight.flight_number} - ${flight.departure_airport} to ${flight.arrival_airport} on ${flight.departure_datetime}</p>`).join('');
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>

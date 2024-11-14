@@ -1,0 +1,62 @@
+<h2>Total Spending for the Past Year</h2>
+<button id="totalYearSpendingButton">Get Total Spending</button>
+
+<div id="totalYearSpendingResult"></div>
+
+<h2>Monthly Spending for the Last 6 Months</h2>
+<button id="monthlySpendingButton">Get Monthly Spending</button>
+
+<div id="monthlySpendingResult"></div>
+
+<h2>Total Spending for a Specified Date Range</h2>
+<form id="totalRangeSpendingForm">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" name="startDate" required>
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" name="endDate" required>
+
+    <button type="submit">Get Spending</button>
+</form>
+
+<div id="totalRangeSpendingResult"></div>
+
+<script>
+document.getElementById('totalYearSpendingButton').addEventListener('click', function() {
+    fetch('/customer/spending/total-year', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('totalYearSpendingResult').innerText = `Total Spent: $${data.total_spent}`;
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('monthlySpendingButton').addEventListener('click', function() {
+    fetch('/customer/spending/monthly-last-6-months', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('monthlySpendingResult');
+        resultDiv.innerHTML = data.map(month => `<p>${month.month}: $${month.total_spent}</p>`).join('');
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('totalRangeSpendingForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    fetch('/customer/spending/total-range?' + new URLSearchParams(formData), {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('totalRangeSpendingResult');
+        resultDiv.innerHTML = `<p>Total Spent: $${data.total.total_spent}</p>` +
+            data.monthly.map(month => `<p>${month.month}: $${month.total_spent}</p>`).join('');
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>

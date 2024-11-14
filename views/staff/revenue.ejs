@@ -1,0 +1,18 @@
+<h1>View Revenue</h1>
+
+<button id="earnedRevenueButton">View Earned Revenue</button>
+<div id="earnedRevenueResult"></div>
+
+<script>
+// AJAX for viewing earned revenue
+document.getElementById('earnedRevenueButton').addEventListener('click', function() {
+    fetch('/staff/earned-revenue', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('earnedRevenueResult').innerHTML = `<p>Last Month: $${data.revenueLastMonth.total_revenue_last_month}</p><p>Last Year: $${data.revenueLastYear.total_revenue_last_year}</p>`;
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
