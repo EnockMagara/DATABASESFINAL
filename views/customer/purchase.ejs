@@ -1,14 +1,49 @@
+<h2>Search Flights</h2>
+<!-- Form for the "to" flight -->
+<form id="toFlightForm">
+    <!-- Input for departure airport -->
+    <input type="text" name="departureAirport" placeholder="Departure Airport" required>
+    <!-- Input for arrival airport -->
+    <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
+    <!-- Input for departure date -->
+    <input type="date" name="departureDate" placeholder="Departure Date" required>
+    <!-- Checkbox for round trip -->
+    <label>
+        <input type="checkbox" id="roundTrip" name="roundTrip"> Round Trip
+    </label>
+    <!-- Input for return date -->
+    <input type="date" id="returnDate" name="returnDate" placeholder="Return Date" disabled>
+    <!-- Button to submit the form and view the "to" flight -->
+    <button type="submit">View Departure Flight</button>
+</form>
+<!-- Div to display the result of the "to" flight search -->
+<div id="toFlightResult"></div>
+
+<!-- Form for the "return" flight -->
+<form id="returnFlightForm">
+    <!-- Input for departure airport -->
+    <input type="text" name="departureAirport" placeholder="Departure Airport" required>
+    <!-- Input for arrival airport -->
+    <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
+    <!-- Input for return date -->
+    <input type="date" name="departureDate" placeholder="Return Date" required>
+    <!-- Button to submit the form and view the "return" flight -->
+    <button type="submit">View Return Flight</button>
+</form>
+<!-- Div to display the result of the "return" flight search -->
+<div id="returnFlightResult"></div>
+
 <h2>Purchase Ticket</h2>
 <form id="purchaseTicketForm">
     <!-- Include all necessary fields for purchasing a ticket -->
     <label for="airline_name">Airline Name:</label>
-    <input type="text" id="airline_name" name="airline_name" required>
+    <input type="text" id="airline_name" name="airline_name" required readonly>
 
     <label for="flight_number">Flight Number:</label>
-    <input type="text" id="flight_number" name="flight_number" required>
+    <input type="text" id="flight_number" name="flight_number" required readonly>
 
     <label for="departure_datetime">Departure Date & Time:</label>
-    <input type="datetime-local" id="departure_datetime" name="departure_datetime" required>
+    <input type="datetime-local" id="departure_datetime" name="departure_datetime" required readonly>
 
     <label for="email">Email:</label>
     <input type="email" id="email" name="email" required>
@@ -16,7 +51,25 @@
     <label for="sold_price">Price:</label>
     <input type="number" id="sold_price" name="sold_price" required>
 
-    <!-- Add other fields like card details, passenger info, etc. -->
+    <!-- Card details -->
+    <label for="card_number">Card Number:</label>
+    <input type="text" id="card_number" name="card_number" required>
+
+    <label for="name_on_card">Name on Card:</label>
+    <input type="text" id="name_on_card" name="name_on_card" required>
+
+    <label for="card_expiration_date">Card Expiration Date:</label>
+    <input type="month" id="card_expiration_date" name="card_expiration_date" required>
+
+    <!-- Passenger information -->
+    <label for="passenger_first_name">Passenger First Name:</label>
+    <input type="text" id="passenger_first_name" name="passenger_first_name" required>
+
+    <label for="passenger_last_name">Passenger Last Name:</label>
+    <input type="text" id="passenger_last_name" name="passenger_last_name" required>
+
+    <label for="passenger_dob">Passenger Date of Birth:</label>
+    <input type="date" id="passenger_dob" name="passenger_dob" required>
 
     <button type="submit">Purchase</button>
 </form>
@@ -27,6 +80,12 @@
 document.getElementById('purchaseTicketForm').addEventListener('submit', function(event) {
     event.preventDefault(); // Prevent the default form submission
     const formData = new FormData(this); // Create a FormData object from the form
+
+    // Log form data for debugging
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+
     fetch('/customer/purchase-ticket', {
         method: 'POST', // Use POST method to send data
         headers: {
@@ -56,4 +115,82 @@ document.getElementById('purchaseTicketForm').addEventListener('submit', functio
         document.getElementById('purchaseResult').innerText = 'An error occurred while processing your purchase';
     });
 });
+
+    // AJAX for viewing the "to" flight
+    document.getElementById('toFlightForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const formData = new FormData(this);
+        const queryParams = new URLSearchParams(formData).toString();
+
+        fetch(`/customer/search-flights?${queryParams}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('toFlightResult');
+            if (!Array.isArray(data) || data.length === 0) {
+                resultDiv.innerHTML = '<p>No flights found.</p>';
+            } else {
+                resultDiv.innerHTML = data.map(flight => `
+                    <div>
+                        <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+                        <button onclick="selectFlight('${flight['Airline']}', '${flight['Flight Number']}', '${flight['Departure Date & Time']}', '${flight['Base Price']}')">Select</button>
+                    </div>
+                `).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('toFlightResult').innerText = error.message;
+        });
+    });
+
+    // Function to populate the purchase form with selected flight details
+    function selectFlight(airline, flightNumber, departureDateTime, basePrice) {
+        const date = new Date(departureDateTime);
+        const formattedDateTime = date.toISOString().slice(0, 16);
+
+        document.getElementById('airline_name').value = airline;
+        document.getElementById('flight_number').value = flightNumber;
+        document.getElementById('departure_datetime').value = formattedDateTime;
+        document.getElementById('sold_price').value = basePrice; // Set the base price
+    }
+
+    // AJAX for viewing the "return" flight
+    document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Collect form data
+        const formData = new FormData(this);
+        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+
+        // Fetch flights with query parameters
+        fetch(`/customer/search-flights?${queryParams}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('returnFlightResult'); // Get result div
+            if (!Array.isArray(data) || data.length === 0) {
+                // Display message if no flights found
+                resultDiv.innerHTML = '<p>No flights found.</p>';
+            } else {
+                // Display flights if found, including airline name and base price
+                resultDiv.innerHTML = data.map(flight => `
+                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+                `).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error); // Log error
+            document.getElementById('returnFlightResult').innerText = error.message; // Display error message
+        });
+    });
+
+    // Enable return date input if round trip is selected
+    document.getElementById('roundTrip').addEventListener('change', function() {
+        document.getElementById('returnDate').disabled = !this.checked;
+    });
+
 </script>

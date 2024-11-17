@@ -2,12 +2,14 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db.mjs';
 import Flight from './Flight.mjs';
 import Customer from './Customer.mjs';
+import { v4 as uuidv4 } from 'uuid'; 
 
 class Ticket extends Model {}
 
 Ticket.init({
     ticket_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true // Primary key for Ticket
     },
     airline_name: {

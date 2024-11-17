@@ -4,6 +4,7 @@ import Flight from '../models/Flight.mjs'; // Import the Flight model
 import { Op } from 'sequelize'; // Import Sequelize operators
 import Rates from '../models/Rates.mjs'; // Import the Rates model
 import ensureAuthenticated from '../middleware/authMiddleware.mjs'; // Import your authentication middleware
+import sequelize from '../config/db.mjs'; // Import the sequelize instance
 
 const router = express.Router();
 
@@ -27,75 +28,62 @@ router.get('/spending', ensureAuthenticated, (req, res) => {
     res.render('customer/spending');
 });
 
-// Route to search for flights
-router.get('/search-flights', async (req, res) => {
-    const { source, destination, departureDate, returnDate } = req.query;
+// Route to search flights
+router.get('/search-flights', ensureAuthenticated, async (req, res) => {
+    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query;
 
     try {
-        // Outbound flights
-        const [outboundFlights] = await sequelize.query(
-            `SELECT 
-                F1.airline_name,
-                F1.flight_number,
-                F1.departure_datetime,
-                A1.name AS departure_airport_name,
-                A1.city AS departure_city,
-                A2.name AS arrival_airport_name,
-                A2.city AS arrival_city,
-                F1.status,
-                F1.base_price
-            FROM 
-                Flight F1
-            JOIN 
-                Airport A1 ON F1.departure_airport = A1.airport_code
-            JOIN 
-                Airport A2 ON F1.arrival_airport = A2.airport_code
-            WHERE 
-                F1.departure_datetime > NOW()
-                AND (A1.city = ? OR A1.name = ?)
-                AND (A2.city = ? OR A2.name = ?)
-                AND F1.departure_datetime BETWEEN ? AND ?`,
-            {
-                replacements: [source, source, destination, destination, departureDate, returnDate],
-                type: sequelize.QueryTypes.SELECT
-            }
-        );
+        console.log('Query parameters:', { departureAirport, arrivalAirport, departureDate, returnDate });
 
-        // Return flights (if returnDate is provided)
-        let returnFlights = [];
-        if (returnDate) {
-            [returnFlights] = await sequelize.query(
-                `SELECT 
-                    F2.airline_name,
-                    F2.flight_number,
-                    F2.departure_datetime,
-                    A3.name AS departure_airport_name,
-                    A3.city AS departure_city,
-                    A4.name AS arrival_airport_name,
-                    A4.city AS arrival_city,
-                    F2.status,
-                    F2.base_price
-                FROM 
-                    Flight F2
-                JOIN 
-                    Airport A3 ON F2.departure_airport = A3.airport_code
-                JOIN 
-                    Airport A4 ON F2.arrival_airport = A4.airport_code
-                WHERE 
-                    F2.departure_datetime > NOW()
-                    AND (A3.city = ? OR A3.name = ?)
-                    AND (A4.city = ? OR A4.name = ?)
-                    AND F2.departure_datetime BETWEEN ? AND ?`,
-                {
-                    replacements: [destination, destination, source, source, returnDate, returnDate],
-                    type: sequelize.QueryTypes.SELECT
-                }
-            );
+        const query = `
+            SELECT 
+                airline_name AS "Airline",
+                flight_number AS "Flight Number",
+                departure_datetime AS "Departure Date & Time",
+                departure_airport AS "Departure Airport",
+                arrival_airport AS "Arrival Airport",
+                base_price AS "Base Price",
+                status AS "Status"
+            FROM 
+                Flight
+            WHERE 
+                (
+                    departure_airport = ? 
+                    AND arrival_airport = ?
+                    AND DATE(departure_datetime) = ?
+                )
+                ${returnDate ? `
+                OR 
+                (
+                    departure_airport = ? 
+                    AND arrival_airport = ?
+                    AND DATE(departure_datetime) = ?
+                )` : ''}
+            ORDER BY 
+                departure_datetime`;
+
+        const replacements = [
+            departureAirport, arrivalAirport, departureDate,
+            ...(returnDate ? [arrivalAirport, departureAirport, returnDate] : [])
+        ];
+
+        const [flights] = await sequelize.query(query, {
+            replacements,
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        const resultArray = Array.isArray(flights) ? flights : [flights];
+
+        if (!resultArray || resultArray.length === 0) {
+            console.log('No flights found');
+            return res.json([]);
         }
 
-        res.json({ outboundFlights, returnFlights });
+        console.log('Flights retrieved:', resultArray);
+        res.json(resultArray);
     } catch (error) {
-        res.status(500).json({ message: 'Error searching for flights' });
+        console.error('Error retrieving flights:', error);
+        res.status(500).json({ message: 'Error retrieving flights' });
     }
 });
 
@@ -103,18 +91,53 @@ router.get('/search-flights', async (req, res) => {
 router.post('/purchase-ticket', async (req, res) => {
     const { airline_name, flight_number, departure_datetime, email, sold_price, card_number, name_on_card, card_expiration_date, passenger_first_name, passenger_last_name, passenger_dob } = req.body;
 
-    try {
-        const [result] = await sequelize.query(
-            `INSERT INTO Ticket (airline_name, flight_number, departure_datetime, email, sold_price, purchase_datetime, card_number, name_on_card, card_expiration_date, passenger_first_name, passenger_last_name, passenger_dob)
-            VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)`,
-            {
-                replacements: [airline_name, flight_number, departure_datetime, email, sold_price, card_number, name_on_card, card_expiration_date, passenger_first_name, passenger_last_name, passenger_dob],
-                type: sequelize.QueryTypes.INSERT
-            }
-        );
+    // Log incoming request data
+    console.log('Purchase request data:', req.body);
 
-        res.status(201).json({ message: 'Ticket purchased successfully', ticketId: result });
+    try {
+        // Parse the departure_datetime as UTC
+        const departureDate = new Date(departure_datetime + 'Z'); // Append 'Z' to treat it as UTC
+
+        // Log the formatted date
+        console.log('Formatted departure date:', departureDate.toISOString());
+
+        // Check if the flight exists
+        const flightExists = await Flight.findOne({
+            where: {
+                airline_name,
+                flight_number,
+                departure_datetime: departureDate // Use the formatted date
+            }
+        });
+
+        if (!flightExists) {
+            console.log('Flight not found:', { airline_name, flight_number, departure_datetime: departureDate });
+            return res.status(400).json({ message: 'Flight does not exist' });
+        }
+
+        // Create a new ticket using the Sequelize model
+        const ticket = await Ticket.create({
+            airline_name,
+            flight_number,
+            departure_datetime: departureDate, // Use the formatted date
+            email,
+            sold_price,
+            purchase_datetime: new Date(), // Set the current date and time
+            card_number,
+            name_on_card,
+            card_expiration_date,
+            passenger_first_name,
+            passenger_last_name,
+            passenger_dob
+        });
+
+        // Log the generated UUID for the ticket
+        console.log('Generated ticket_id:', ticket.ticket_id);
+
+        res.status(201).json({ message: 'Ticket purchased successfully', ticketId: ticket.ticket_id });
     } catch (error) {
+        // Log the error for debugging
+        console.error('Error purchasing ticket:', error);
         res.status(500).json({ message: 'Error purchasing ticket' });
     }
 });
@@ -146,10 +169,45 @@ router.post('/cancel-trip', async (req, res) => {
 });
 
 // Route to give feedback
-router.post('/give-feedback', async (req, res) => {
-    const { email, airline_name, flight_number, departure_datetime, rating, comments } = req.body;
+router.post('/give-feedback', ensureAuthenticated, async (req, res) => {
+    const { flight_number, departure_datetime, rating, comments } = req.body;
+    const { email } = req.user; // Retrieve email from the authenticated user
 
     try {
+        // Check if the customer has a ticket for the specified flight
+        const [ticket] = await sequelize.query(
+            `SELECT * FROM Ticket 
+            WHERE email = ? 
+            AND flight_number = ? 
+            AND departure_datetime = ?`,
+            {
+                replacements: [email, flight_number, departure_datetime],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!ticket) {
+            return res.status(403).json({ message: 'You do not have a ticket for this flight' });
+        }
+
+        // Optionally, check if the flight has already departed
+        const [flight] = await sequelize.query(
+            `SELECT airline_name FROM Flight 
+            WHERE flight_number = ? 
+            AND departure_datetime = ? 
+            AND departure_datetime < NOW()`, // Ensure the flight has departed
+            {
+                replacements: [flight_number, departure_datetime],
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        if (!flight) {
+            return res.status(404).json({ message: 'Flight not found or has not yet departed' });
+        }
+
+        const airline_name = flight.airline_name;
+
         const [result] = await sequelize.query(
             `INSERT INTO Rates (email, airline_name, flight_number, departure_datetime, rating, comments)
             VALUES (?, ?, ?, ?, ?, ?)`,
