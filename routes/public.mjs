@@ -1,115 +1,109 @@
 import express from 'express';
-import { Op } from 'sequelize'; // Import Sequelize operators
-import Flight from '../models/Flight.mjs'; // Import the Flight model
-import sequelize from 'sequelize'; // Import Sequelize
+import sequelize from '../config/db.mjs';
 
 const router = express.Router();
 
-// Route to search for future flights
+// Route to view flights
 router.get('/search-flights', async (req, res) => {
-    // Extract search parameters from query
-    const { source, destination, departureDate, returnDate } = req.query;
+    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query; // Query parameters
 
     try {
-        // Query database for one-way flights
-        const [flights] = await sequelize.query(
-            `SELECT 
-                F.airline_name,
-                F.flight_number,
-                F.departure_datetime,
-                A1.name AS departure_airport_name,
-                A1.city AS departure_city,
-                A2.name AS arrival_airport_name,
-                A2.city AS arrival_city,
-                F.status,
-                F.base_price
-            FROM 
-                Flight F
-            JOIN 
-                Airport A1 ON F.departure_airport = A1.airport_code
-            JOIN 
-                Airport A2 ON F.arrival_airport = A2.airport_code
-            WHERE 
-                F.departure_datetime >= ?
-                AND (A1.city = ? OR A1.name = ?)
-                AND (A2.city = ? OR A2.name = ?)`,
-            {
-                replacements: [new Date(departureDate), source, source, destination, destination],
-                type: sequelize.QueryTypes.SELECT
-            }
-        );
+        // Log the query parameters for debugging
+        console.log('Query parameters:', { departureAirport, arrivalAirport, departureDate, returnDate });
 
-        // If returnDate is provided, query for return flights
-        if (returnDate) {
-            const [returnFlights] = await sequelize.query(
-                `SELECT 
-                    F.airline_name,
-                    F.flight_number,
-                    F.departure_datetime,
-                    A1.name AS departure_airport_name,
-                    A1.city AS departure_city,
-                    A2.name AS arrival_airport_name,
-                    A2.city AS arrival_city,
-                    F.status,
-                    F.base_price
-                FROM 
-                    Flight F
-                JOIN 
-                    Airport A1 ON F.departure_airport = A1.airport_code
-                JOIN 
-                    Airport A2 ON F.arrival_airport = A2.airport_code
-                WHERE 
-                    F.departure_datetime >= ?
-                    AND (A1.city = ? OR A1.name = ?)
-                    AND (A2.city = ? OR A2.name = ?)`,
-                {
-                    replacements: [new Date(returnDate), destination, destination, source, source],
-                    type: sequelize.QueryTypes.SELECT
-                }
-            );
-            // Return both flights and returnFlights as JSON
-            return res.json({ flights, returnFlights });
+        // Construct the SQL query with the provided conditions
+        const query = `
+            SELECT 
+                airline_name AS "Airline",
+                flight_number AS "Flight Number",
+                departure_datetime AS "Departure Date & Time",
+                departure_airport AS "Departure Airport",
+                arrival_airport AS "Arrival Airport",
+                base_price AS "Base Price",
+                status AS "Status"
+            FROM 
+                Flight
+            WHERE 
+                (
+                    departure_airport = ? 
+                    AND arrival_airport = ?
+                    AND DATE(departure_datetime) = ?
+                )
+                ${returnDate ? `
+                OR 
+                (
+                    departure_airport = ? 
+                    AND arrival_airport = ?
+                    AND DATE(departure_datetime) = ?
+                )` : ''}
+            ORDER BY 
+                departure_datetime`;
+
+        // Prepare replacements array
+        const replacements = [
+            departureAirport, arrivalAirport, departureDate,
+            ...(returnDate ? [arrivalAirport, departureAirport, returnDate] : [])
+        ];
+
+        // Execute the query with replacements
+        const [flights] = await sequelize.query(query, {
+            replacements,
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // Ensure the result is always an array
+        const resultArray = Array.isArray(flights) ? flights : [flights];
+
+        // Check if flights is undefined or empty
+        if (!resultArray || resultArray.length === 0) {
+            console.log('No flights found');
+            return res.json([]); // Return an empty array if no flights are found
         }
 
-        // Send flight data as response, even if empty
-        res.json({ flights });
+        console.log('Flights retrieved:', resultArray); // Log the flights retrieved
+        res.json(resultArray); // Ensure a JSON response is always sent
     } catch (error) {
-        // Return error message as JSON
-        res.status(500).json({ message: 'Error searching for flights' });
+        console.error('Error retrieving flights:', error); // Log the error for debugging
+        res.status(500).json({ message: 'Error retrieving flights' }); // Send a JSON error response
     }
 });
 
 // Route to view flight status
 router.get('/flight-status', async (req, res) => {
     // Extract flight details from query
-    const { airline, flightNumber, date } = req.query;
+    const { airline, flightNumber, date } = req.query; // Get query parameters
 
     try {
         // Query database for flight status
         const [flight] = await sequelize.query(
             `SELECT 
-                status
+                airline_name AS "Airline",
+                flight_number AS "Flight Number",
+                departure_datetime AS "Departure Date & Time",
+                arrival_airport AS "Arrival Airport",
+                departure_airport AS "Departure Airport",
+                status AS "Flight Status"
             FROM 
                 Flight
             WHERE 
-                airline_name = ?
-                AND flight_number = ?
-                AND departure_datetime = ?`,
+                airline_name = ? -- Match airline name
+                AND flight_number = ? -- Match flight number
+                AND DATE(departure_datetime) = ?`, // Match departure date
             {
-                replacements: [airline, flightNumber, new Date(date)],
+                replacements: [airline, flightNumber, date], // Use query parameters
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
         // Send status as response, or an empty object if not found
         if (flight) {
-            res.json({ status: flight.status });
+            res.json({ status: flight['Flight Status'] }); // Return flight status
         } else {
-            res.status(404).json({ message: 'Flight not found' });
+            res.status(404).json({ message: 'Flight not found' }); // Flight not found response
         }
     } catch (error) {
         // Return error message as JSON
-        res.status(500).json({ message: 'Error retrieving flight status' });
+        res.status(500).json({ message: 'Error retrieving flight status' }); // Error response
     }
 });
 

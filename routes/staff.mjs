@@ -69,7 +69,21 @@ router.post('/create-flight', ensureAuthenticated, async (req, res) => {
 // Route to update an existing flight
 router.put('/update-flight/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
-    const { airline_name, departure_airport, arrival_airport, base_price, status } = req.body;
+    const { departure_airport, arrival_airport, base_price, status } = req.body;
+
+    // Extract airline_name from the authenticated user's data
+    const airline_name = req.user.airline_name;
+
+    // Log the received data for debugging
+    console.log('Received data:', {
+        airline_name,
+        departure_airport,
+        arrival_airport,
+        base_price,
+        status,
+        flight_number,
+        departure_datetime
+    });
 
     try {
         const result = await sequelize.query(
@@ -82,16 +96,15 @@ router.put('/update-flight/:flight_number/:departure_datetime', ensureAuthentica
             }
         );
 
-        console.log('Full update result:', result); // Log the full result
+        console.log('Full update result:', result);
 
-        // Check if any rows were affected
-        if (result[1] > 0) { // Adjusted to check the second element
+        if (result[1] > 0) {
             res.json({ message: 'Flight updated successfully' });
         } else {
             res.status(404).json({ message: 'Flight not found' });
         }
     } catch (error) {
-        console.error('Error updating flight:', error); // Log the error for debugging
+        console.error('Error updating flight:', error);
         res.status(500).json({ message: 'Error updating flight' });
     }
 });
@@ -158,44 +171,66 @@ router.post('/schedule-maintenance', ensureAuthenticated, async (req, res) => {
 // Route to view flights
 router.get('/view-flights', ensureAuthenticated, async (req, res) => {
     const { username } = req.user; // Assume username is extracted from session or JWT
-    const { startDate, endDate, source, destination } = req.query; // Optional query parameters
+    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query; // Query parameters
 
     try {
-        const [flights] = await sequelize.query(
-            `SELECT 
-                F.airline_name,
-                F.flight_number,
-                F.departure_datetime,
-                F.departure_airport,
-                F.arrival_airport,
-                F.status,
-                F.base_price
-            FROM 
-                Flight F
-            JOIN 
-                AirlineStaff A ON F.airline_name = A.airline_name
-            WHERE 
-                A.username = ?
-                AND F.departure_datetime BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY)
-                ${startDate && endDate ? 'AND F.departure_datetime BETWEEN ? AND ?' : ''}
-                ${source ? 'AND (F.departure_airport = ? OR A1.city = ?)' : ''}
-                ${destination ? 'AND (F.arrival_airport = ? OR A2.city = ?)' : ''}`,
-            {
-                replacements: [
-                    username,
-                    ...(startDate && endDate ? [startDate, endDate] : []),
-                    ...(source ? [source, source] : []),
-                    ...(destination ? [destination, destination] : [])
-                ],
-                type: sequelize.QueryTypes.SELECT
-            }
-        );
+        // Log the query parameters for debugging
+        console.log('Query parameters:', { departureAirport, arrivalAirport, departureDate, returnDate });
 
-        console.log('Flights retrieved:', flights); // Log the flights retrieved
-        res.json(flights);
+        // Construct the SQL query with the provided conditions
+        const query = `
+            SELECT 
+                airline_name AS "Airline",
+                flight_number AS "Flight Number",
+                departure_datetime AS "Departure Date & Time",
+                departure_airport AS "Departure Airport",
+                arrival_airport AS "Arrival Airport",
+                base_price AS "Base Price",
+                status AS "Status"
+            FROM 
+                Flight
+            WHERE 
+                (
+                    departure_airport = ? 
+                    AND arrival_airport = ?
+                    AND DATE(departure_datetime) = ?
+                )
+                ${returnDate ? `
+                OR 
+                (
+                    departure_airport = ? 
+                    AND arrival_airport = ?
+                    AND DATE(departure_datetime) = ?
+                )` : ''}
+            ORDER BY 
+                departure_datetime`;
+
+        // Prepare replacements array
+        const replacements = [
+            departureAirport, arrivalAirport, departureDate,
+            ...(returnDate ? [arrivalAirport, departureAirport, returnDate] : [])
+        ];
+
+        // Execute the query with replacements
+        const [flights] = await sequelize.query(query, {
+            replacements,
+            type: sequelize.QueryTypes.SELECT
+        });
+
+        // Ensure the result is always an array
+        const resultArray = Array.isArray(flights) ? flights : [flights];
+
+        // Check if flights is undefined or empty
+        if (!resultArray || resultArray.length === 0) {
+            console.log('No flights found');
+            return res.json([]); // Return an empty array if no flights are found
+        }
+
+        console.log('Flights retrieved:', resultArray); // Log the flights retrieved
+        res.json(resultArray); // Ensure a JSON response is always sent
     } catch (error) {
         console.error('Error retrieving flights:', error); // Log the error for debugging
-        res.status(500).json({ message: 'Error retrieving flights' });
+        res.status(500).json({ message: 'Error retrieving flights' }); // Send a JSON error response
     }
 });
 

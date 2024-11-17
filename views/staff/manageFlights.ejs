@@ -26,10 +26,26 @@
 </form>
 <div id="updateFlightResult"></div>
 
-<!-- Section to view flights -->
+<!-- Section to view flights with filters -->
 <h2>View Flights</h2>
-<button id="viewFlightsButton">View Flights</button>
-<div id="viewFlightsResult"></div>
+
+<!-- Form for the "to" flight -->
+<form id="toFlightForm">
+    <input type="text" name="departureAirport" placeholder="Departure Airport" required>
+    <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
+    <input type="date" name="departureDate" placeholder="Departure Date" required>
+    <button type="submit">View Departure Flight</button>
+</form>
+<div id="toFlightResult"></div>
+
+<!-- Form for the "return" flight -->
+<form id="returnFlightForm">
+    <input type="text" name="departureAirport" placeholder="Departure Airport" required>
+    <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
+    <input type="date" name="departureDate" placeholder="Return Date" required>
+    <button type="submit">View Return Flight</button>
+</form>
+<div id="returnFlightResult"></div>
 
 <!-- Section to change flight status -->
 <h2>Change Flight Status</h2>
@@ -67,6 +83,17 @@ document.getElementById('updateFlightForm').addEventListener('submit', function(
     const formData = new FormData(this);
     const flightNumber = document.getElementById('update_flight_number').value;
     const departureDatetime = document.getElementById('update_departure_datetime').value;
+
+    // Log form data to check if all fields are filled
+    console.log('Form data:', {
+        flightNumber,
+        departureDatetime,
+        departure_airport: formData.get('departure_airport'),
+        arrival_airport: formData.get('arrival_airport'),
+        base_price: formData.get('base_price'),
+        status: formData.get('status')
+    });
+
     fetch(`/staff/update-flight/${flightNumber}/${departureDatetime}`, {
         method: 'PUT',
         headers: {
@@ -82,29 +109,65 @@ document.getElementById('updateFlightForm').addEventListener('submit', function(
     .catch(error => console.error('Error:', error));
 });
 
-// AJAX for viewing flights
-document.getElementById('viewFlightsButton').addEventListener('click', function() {
-    fetch('/staff/view-flights', {
+// AJAX for viewing the "to" flight
+document.getElementById('toFlightForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Collect form data
+    const formData = new FormData(this);
+    const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+
+    // Fetch flights with query parameters
+    fetch(`/staff/view-flights?${queryParams}`, {
         method: 'GET'
     })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.text().then(text => {
-            console.log('Response text:', text);
-            if (!response.ok) {
-                throw new Error(text);
-            }
-            return JSON.parse(text);
-        });
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('View flights response:', data);
-        const resultDiv = document.getElementById('viewFlightsResult');
-        resultDiv.innerHTML = data.map(flight => `<p>${flight.flight_number} - ${flight.departure_airport} to ${flight.arrival_airport} on ${flight.departure_datetime}</p>`).join('');
+        console.log('To flight response:', data);
+        const resultDiv = document.getElementById('toFlightResult');
+        if (!Array.isArray(data) || data.length === 0) {
+            resultDiv.innerHTML = '<p>No flights found.</p>';
+        } else {
+            // Include base price in the displayed information
+            resultDiv.innerHTML = data.map(flight => `
+                <p>${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+            `).join('');
+        }
     })
     .catch(error => {
         console.error('Error:', error);
-        document.getElementById('viewFlightsResult').innerText = error.message;
+        document.getElementById('toFlightResult').innerText = error.message;
+    });
+});
+
+// AJAX for viewing the "return" flight
+document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent default form submission
+
+    // Collect form data
+    const formData = new FormData(this);
+    const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+
+    // Fetch flights with query parameters
+    fetch(`/staff/view-flights?${queryParams}`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Return flight response:', data);
+        const resultDiv = document.getElementById('returnFlightResult');
+        if (!Array.isArray(data) || data.length === 0) {
+            resultDiv.innerHTML = '<p>No flights found.</p>';
+        } else {
+            // Include base price in the displayed information
+            resultDiv.innerHTML = data.map(flight => `
+                <p>${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+            `).join('');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('returnFlightResult').innerText = error.message;
     });
 });
 

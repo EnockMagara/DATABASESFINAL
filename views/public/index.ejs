@@ -11,22 +11,23 @@
     <!-- Section for viewing public information -->
     <section>
         <h2>Search for Flights</h2>
-        <form id="searchFlightsForm">
-            <label for="source">Source Airport:</label>
-            <input type="text" id="source" name="source" required>
-
-            <label for="destination">Destination Airport:</label>
-            <input type="text" id="destination" name="destination" required>
-
-            <label for="departureDate">Departure Date:</label>
-            <input type="date" id="departureDate" name="departureDate" required>
-
-            <label for="returnDate">Return Date (optional):</label>
-            <input type="date" id="returnDate" name="returnDate">
-
-            <button type="submit">Search Flights</button>
+        <!-- Form for the "to" flight -->
+        <form id="toFlightForm">
+            <input type="text" name="departureAirport" placeholder="Departure Airport" required>
+            <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
+            <input type="date" name="departureDate" placeholder="Departure Date" required>
+            <button type="submit">View To Flight</button>
         </form>
-        <div id="flightsResult"></div>
+        <div id="toFlightResult"></div>
+
+        <!-- Form for the "return" flight -->
+        <form id="returnFlightForm">
+            <input type="text" name="departureAirport" placeholder="Departure Airport" required>
+            <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
+            <input type="date" name="departureDate" placeholder="Return Date" required>
+            <button type="submit">View Return Flight</button>
+        </form>
+        <div id="returnFlightResult"></div>
 
         <h2>Check Flight Status</h2>
         <form id="checkFlightStatusForm">
@@ -59,35 +60,65 @@
     </section>
 
     <script>
-    // AJAX for searching flights
-    document.getElementById('searchFlightsForm').addEventListener('submit', function(event) {
+    // AJAX for viewing the "to" flight
+    document.getElementById('toFlightForm').addEventListener('submit', function(event) {
         event.preventDefault(); // Prevent default form submission
-        const formData = new FormData(this); // Collect form data
-        // Fetch request to search flights
-        fetch('/public/search-flights?' + new URLSearchParams(formData), {
+
+        // Collect form data
+        const formData = new FormData(this);
+        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+
+        // Fetch flights with query parameters
+        fetch(`/public/search-flights?${queryParams}`, {
             method: 'GET'
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok'); // Throw an error if response is not ok
-            }
-            return response.json(); // Parse JSON response
-        })
+        .then(response => response.json())
         .then(data => {
-            const resultDiv = document.getElementById('flightsResult'); // Get result div
-            if (data.flights && data.flights.length > 0) {
-                // Display flights if found
-                resultDiv.innerHTML = data.flights.map(flight => `
-                    <p>${flight.airline_name} Flight ${flight.flight_number} from ${flight.departure_city} to ${flight.arrival_city} on ${new Date(flight.departure_datetime).toLocaleString()}</p>
-                `).join('');
-            } else {
+            const resultDiv = document.getElementById('toFlightResult'); // Get result div
+            if (!Array.isArray(data) || data.length === 0) {
                 // Display message if no flights found
                 resultDiv.innerHTML = '<p>No flights found.</p>';
+            } else {
+                // Display flights if found, including airline name and base price
+                resultDiv.innerHTML = data.map(flight => `
+                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+                `).join('');
             }
         })
         .catch(error => {
             console.error('Error:', error); // Log error
-            document.getElementById('flightsResult').innerText = 'An error occurred while searching for flights.'; // Display error message
+            document.getElementById('toFlightResult').innerText = error.message; // Display error message
+        });
+    });
+
+    // AJAX for viewing the "return" flight
+    document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Collect form data
+        const formData = new FormData(this);
+        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+
+        // Fetch flights with query parameters
+        fetch(`/public/search-flights?${queryParams}`, {
+            method: 'GET'
+        })
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('returnFlightResult'); // Get result div
+            if (!Array.isArray(data) || data.length === 0) {
+                // Display message if no flights found
+                resultDiv.innerHTML = '<p>No flights found.</p>';
+            } else {
+                // Display flights if found, including airline name and base price
+                resultDiv.innerHTML = data.map(flight => `
+                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+                `).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error); // Log error
+            document.getElementById('returnFlightResult').innerText = error.message; // Display error message
         });
     });
 
