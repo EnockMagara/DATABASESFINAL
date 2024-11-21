@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
+    <link rel="stylesheet" href="/css/main.css">
 </head>
 <body>
     <h1>Welcome to the Flight Reservation System</h1>
@@ -16,7 +17,7 @@
             <input type="text" name="departureAirport" placeholder="Departure Airport" required>
             <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
             <input type="date" name="departureDate" placeholder="Departure Date" required>
-            <button type="submit">View To Flight</button>
+            <button type="submit" class="btn">View Departure Flight</button>
         </form>
         <div id="toFlightResult"></div>
 
@@ -25,7 +26,7 @@
             <input type="text" name="departureAirport" placeholder="Departure Airport" required>
             <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
             <input type="date" name="departureDate" placeholder="Return Date" required>
-            <button type="submit">View Return Flight</button>
+            <button type="submit" class="btn">View Return Flight</button>
         </form>
         <div id="returnFlightResult"></div>
 
@@ -40,7 +41,7 @@
             <label for="date">Date:</label>
             <input type="date" id="date" name="date" required>
 
-            <button type="submit">Check Flight Status</button>
+            <button type="submit" class="btn">Check Flight Status</button>
         </form>
         <div id="flightStatusResult"></div>
     </section>
@@ -48,15 +49,16 @@
     <!-- Section for user registration -->
     <section>
         <h2>Register</h2>
-        <a href="/register">Register as Customer or Airline Staff</a>
+        <!-- Button for registration -->
+        <a href="/register" class="btn">Register</a>
     </section>
 
     <!-- Section for user login -->
     <section>
         <h2>Login</h2>
-        <!-- Separate links for customer and staff login -->
-        <a href="/customer-login">Login as Customer</a>
-        <a href="/staff-login">Login as Airline Staff</a>
+        <!-- Buttons for customer and staff login -->
+        <a href="/customer-login" class="btn">Login as Customer</a>
+        <a href="/staff-login" class="btn">Login as Airline Staff</a>
     </section>
 
     <script>

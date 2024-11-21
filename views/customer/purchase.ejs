@@ -1,4 +1,5 @@
 <h2>Search Flights</h2>
+<link rel="stylesheet" href="/css/main.css"> <!-- Link to the CSS file -->
 <!-- Form for the "to" flight -->
 <form id="toFlightForm">
     <!-- Input for departure airport -->
@@ -14,7 +15,7 @@
     <!-- Input for return date -->
     <input type="date" id="returnDate" name="returnDate" placeholder="Return Date" disabled>
     <!-- Button to submit the form and view the "to" flight -->
-    <button type="submit">View Departure Flight</button>
+    <button type="submit" class="btn">View Departure Flight</button>
 </form>
 <!-- Div to display the result of the "to" flight search -->
 <div id="toFlightResult"></div>
@@ -28,7 +29,7 @@
     <!-- Input for return date -->
     <input type="date" name="departureDate" placeholder="Return Date" required>
     <!-- Button to submit the form and view the "return" flight -->
-    <button type="submit">View Return Flight</button>
+    <button type="submit" class="btn">View Return Flight</button>
 </form>
 <!-- Div to display the result of the "return" flight search -->
 <div id="returnFlightResult"></div>
@@ -71,7 +72,7 @@
     <label for="passenger_dob">Passenger Date of Birth:</label>
     <input type="date" id="passenger_dob" name="passenger_dob" required>
 
-    <button type="submit">Purchase</button>
+    <button type="submit" class="btn">Purchase</button>
 </form>
 
 <div id="purchaseResult"></div>

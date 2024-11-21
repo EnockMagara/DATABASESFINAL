@@ -1,95 +1,126 @@
-/* Global Styles */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f9;
-    color: #333;
+/* Mobile-first styles for form and result cards */
+form, div[id$="Result"] {
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Light text color for contrast */
+    padding: 20px; /* Padding inside the card */
+    margin: 10px 0; /* Margin between cards */
+    border-radius: 8px; /* Rounded corners for card effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
 
-h1, h2 {
-    text-align: center;
-    color: #444;
+/* Responsive styles for larger screens */
+@media (min-width: 768px) {
+    form, div[id$="Result"] {
+        max-width: 600px; /* Limit width on larger screens */
+        margin: 20px auto; /* Center cards horizontally */
+    }
 }
 
-section {
-    margin: 20px;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+/* Mobile-first styles for buttons */
+.btn {
+    display: block; /* Make each button a block element */
+    background-color: #444; /* Darker background for buttons */
+    color: #fff; /* White text for contrast */
+    padding: 10px 20px; /* Padding for button size */
+    margin: 10px auto; /* Center buttons and add vertical spacing */
+    text-align: center; /* Center text inside button */
+    text-decoration: none; /* Remove underline from links */
+    border-radius: 5px; /* Rounded corners for button effect */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+    max-width: 200px; /* Limit button width */
 }
 
-section:hover {
-    transform: translateY(-5px);
+/* Hover effect for buttons */
+.btn:hover {
+    background-color: #555; /* Slightly lighter background on hover */
+}
+
+/* Responsive styles for larger screens */
+@media (min-width: 768px) {
+    .btn {
+        max-width: 250px; /* Increase button width for larger screens */
+    }
+
+    /* Center sections and add spacing */
+    section {
+        max-width: 800px; /* Limit section width */
+        margin: 40px auto; /* Center sections and add vertical spacing */
+        padding: 20px; /* Add padding for better spacing */
+        background-color: #222; /* Darker background for sections */
+        border-radius: 10px; /* Rounded corners for sections */
+    }
+
+    h2 {
+        margin-bottom: 20px; /* Add space below headings */
+        color: #fff; /* White color for headings */
+    }
+}
+
+/* Center and animate the welcome text */
+h1 {
+    text-align: center; /* Center the text */
+    color: #0e0909; /* White color for contrast */
+    margin-top: 20px; /* Add some margin at the top */
+    animation: fadeIn 2s ease-in-out; /* Apply fade-in animation */
+}
+/* Center and animate the welcome text */
+h2 {
+    text-align: center; /* Center the text */
+    color: #0f0c0c; /* White color for contrast */
+    margin-top: 20px; /* Add some margin at the top */
+    animation: fadeIn 2s ease-in-out; /* Apply fade-in animation */
+}
+
+/* Keyframes for fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0; /* Start with invisible text */
+    }
+    to {
+        opacity: 1; /* End with fully visible text */
+    }
 }
 
 form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid; /* Use grid layout for better control */
+    grid-template-columns: 1fr 1fr; /* Two columns of equal width */
+    gap: 10px; /* Space between grid items */
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Light text color for contrast */
+    padding: 20px; /* Padding inside the card */
+    margin: 10px 0; /* Margin between cards */
+    border-radius: 8px; /* Rounded corners for card effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    max-width: 600px; /* Limit form width */
+    margin-left: auto; /* Center form horizontally */
+    margin-right: auto; /* Center form horizontally */
 }
 
-label {
-    font-weight: bold;
+form label {
+    display: block; /* Make labels block elements */
+    margin-bottom: 5px; /* Space between label and input */
 }
 
-input[type="text"],
-input[type="date"],
-button {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 16px;
+form input, form select, form textarea {
+    width: 100%; /* Full width for inputs, selects, and textareas */
+    padding: 8px; /* Padding inside inputs */
+    border-radius: 4px; /* Rounded corners for inputs */
+    border: 1px solid #ccc; /* Light border for inputs */
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
 }
 
-button {
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+form button {
+    grid-column: span 2; /* Make button span both columns */
+    margin-top: 10px; /* Space above the button */
+    padding: 10px 20px; /* Padding for button size */
+    background-color: #444; /* Darker background for button */
+    color: #fff; /* White text for contrast */
+    border-radius: 5px; /* Rounded corners for button */
+    border: none; /* Remove default button border */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
 }
 
-button:hover {
-    background-color: #0056b3;
-}
-
-a {
-    display: block;
-    text-align: center;
-    margin: 10px 0;
-    color: #007bff;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-a:hover {
-    color: #0056b3;
-}
-
-#flightsResult, #flightStatusResult {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #e9ecef;
-    border-radius: 4px;
-}
-
-/* Mobile First */
-@media (min-width: 600px) {
-    form {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: space-between;
-    }
-
-    label, input, button {
-        flex: 1 1 45%;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    button {
-        margin-bottom: 10px;
-    }
+form button:hover {
+    background-color: #555; /* Slightly lighter background on hover */
 }
