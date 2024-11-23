@@ -32,36 +32,78 @@ router.get('/staff-login', (req, res) => {
     res.render('public/staffLogin');
 });
 
-// Route to render the customer dashboard
+// Route to render the customer navigation with booked flights
 router.get('/customer/dashboard', ensureAuthenticated, async (req, res) => {
     try {
-        // Use raw SQL to fetch tickets and related flight data
-        const [tickets] = await sequelize.query(`
+        // Only include flights with a departure_datetime in the future
+        const flights = await sequelize.query(`
             SELECT 
-                Ticket.*, 
-                Flight.airline_name AS 'Flight.airline_name', 
-                Flight.flight_number AS 'Flight.flight_number', 
-                Flight.departure_datetime AS 'Flight.departure_datetime', 
-                Flight.departure_airport AS 'Flight.departure_airport', 
-                Flight.arrival_airport AS 'Flight.arrival_airport', 
-                Flight.base_price AS 'Flight.base_price', 
-                Flight.status AS 'Flight.status'
-            FROM Ticket
-            LEFT JOIN Flight ON 
-                Ticket.airline_name = Flight.airline_name AND 
-                Ticket.flight_number = Flight.flight_number AND 
-                Ticket.departure_datetime = Flight.departure_datetime
-            WHERE Ticket.email = :email
+                T.ticket_id, -- Ticket ID
+                F.airline_name, -- Airline name
+                F.flight_number, -- Flight number
+                F.departure_datetime, -- Departure date and time
+                F.departure_airport, -- Departure airport
+                F.arrival_airport, -- Arrival airport
+                T.sold_price -- Sold price of the ticket
+            FROM 
+                Ticket T
+            JOIN 
+                Flight F ON T.airline_name = F.airline_name 
+                AND T.flight_number = F.flight_number 
+                AND T.departure_datetime = F.departure_datetime
+            WHERE 
+                T.email = :email -- Filter by customer's email
+                AND F.departure_datetime > NOW() -- Only future flights
         `, {
             replacements: { email: req.user.email }, // Use replacements to prevent SQL injection
             type: sequelize.QueryTypes.SELECT // Specify the query type
         });
 
-        // Render the customer navigation view with tickets
-        res.render('customer/navigation', { user: req.user, tickets });
+        console.log('Flights data:', flights); // Log the flights data to check its structure
+
+        // Render the customer navigation view with the flights data
+        res.render('customer/navigation', { user: req.user, flights });
     } catch (error) {
-        console.error('Error fetching tickets:', error);
-        res.status(500).send('Error loading dashboard');
+        console.error('Error retrieving flights:', error); // Log any errors
+        res.status(500).send('Error retrieving flights'); // Send error response
+    }
+});
+
+// Route to render the customer navigation with past flights
+router.get('/customer/ratings', ensureAuthenticated, async (req, res) => {
+    try {
+        // Use raw SQL to fetch tickets and related flight data for the logged-in customer
+        // Only include flights with a departure_datetime in the past
+        const pastFlights = await sequelize.query(`
+            SELECT 
+                T.ticket_id, -- Ticket ID
+                F.airline_name, -- Airline name
+                F.flight_number, -- Flight number
+                F.departure_datetime, -- Departure date and time
+                F.departure_airport, -- Departure airport
+                F.arrival_airport, -- Arrival airport
+                T.sold_price -- Sold price of the ticket
+            FROM 
+                Ticket T
+            JOIN 
+                Flight F ON T.airline_name = F.airline_name 
+                AND T.flight_number = F.flight_number 
+                AND T.departure_datetime = F.departure_datetime
+            WHERE 
+                T.email = :email -- Filter by customer's email
+                AND F.departure_datetime < NOW() -- Only past flights
+        `, {
+            replacements: { email: req.user.email }, // Use replacements to prevent SQL injection
+            type: sequelize.QueryTypes.SELECT // Specify the query type
+        });
+
+        console.log('Past Flights data:', pastFlights); // Log the past flights data to check its structure
+
+        // Render a view with the past flights data
+        res.render('customer/ratings', { user: req.user, pastFlights });
+    } catch (error) {
+        console.error('Error retrieving past flights:', error); // Log any errors
+        res.status(500).send('Error retrieving past flights'); // Send error response
     }
 });
 

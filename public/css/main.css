@@ -19,7 +19,7 @@ form, div[id$="Result"] {
 /* Mobile-first styles for buttons */
 .btn {
     display: block; /* Make each button a block element */
-    background-color: #444; /* Darker background for buttons */
+    background-color: #5c6363; /* Darker background for buttons */
     color: #fff; /* White text for contrast */
     padding: 10px 20px; /* Padding for button size */
     margin: 10px auto; /* Center buttons and add vertical spacing */
@@ -46,7 +46,7 @@ form, div[id$="Result"] {
         max-width: 800px; /* Limit section width */
         margin: 40px auto; /* Center sections and add vertical spacing */
         padding: 20px; /* Add padding for better spacing */
-        background-color: #222; /* Darker background for sections */
+        background-color: #253A3A; /* Darker background for sections */
         border-radius: 10px; /* Rounded corners for sections */
     }
 
@@ -66,7 +66,7 @@ h1 {
 /* Center and animate the welcome text */
 h2 {
     text-align: center; /* Center the text */
-    color: #0f0c0c; /* White color for contrast */
+    color: #e8dede; /* White color for contrast */
     margin-top: 20px; /* Add some margin at the top */
     animation: fadeIn 2s ease-in-out; /* Apply fade-in animation */
 }
@@ -84,11 +84,11 @@ h2 {
 form {
     display: grid; /* Use grid layout for better control */
     grid-template-columns: 1fr 1fr; /* Two columns of equal width */
-    gap: 10px; /* Space between grid items */
-    background-color: #333; /* Dark background color */
+    gap: 20px; /* Space between grid items */
+    background-color: #253A3A; /* Dark background color */
     color: #fff; /* Light text color for contrast */
     padding: 20px; /* Padding inside the card */
-    margin: 10px 0; /* Margin between cards */
+    margin: 20px 0; /* Margin between cards */
     border-radius: 8px; /* Rounded corners for card effect */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
     max-width: 600px; /* Limit form width */
@@ -123,4 +123,22 @@ form button {
 
 form button:hover {
     background-color: #555; /* Slightly lighter background on hover */
+}
+
+/* Style for the flight list similar to result cards */
+.styled-list {
+    background-color: #333; /* Dark background color */
+    color: #fff; /* Light text color for contrast */
+    padding: 20px; /* Padding inside the list */
+    margin: 10px 0; /* Margin between lists */
+    border-radius: 8px; /* Rounded corners for list effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    list-style-type: none; /* Remove default list styling */
+    max-width: 600px; /* Limit form width */
+    margin-left: auto; /* Center form horizontally */
+    margin-right: auto; /* Center form horizontally */
+}
+
+.styled-list li {
+    margin-bottom: 10px; /* Space between list items */
 }

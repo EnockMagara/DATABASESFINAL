@@ -143,11 +143,20 @@ router.post('/purchase-ticket', async (req, res) => {
 });
 
 // Route to cancel a trip
-router.post('/cancel-trip', async (req, res) => {
-    const { ticket_id, email } = req.body;
+router.post('/cancel-trip', ensureAuthenticated, async (req, res) => {
+    const { ticket_id } = req.body; // Only get ticket_id from the request body
+    const email = req.user.email; // Retrieve email from the authenticated user
+
+    // Log the incoming request data
+    console.log('Cancel trip request data:', { ticket_id, email });
 
     try {
-        const [result] = await sequelize.query(
+        if (!ticket_id || !email) {
+            // If request data is missing, return an error
+            return res.status(400).json({ message: 'Invalid request data' });
+        }
+
+        await sequelize.query(
             `DELETE FROM Ticket 
             WHERE ticket_id = ? 
             AND email = ? 
@@ -158,12 +167,15 @@ router.post('/cancel-trip', async (req, res) => {
             }
         );
 
-        if (result.affectedRows > 0) {
-            res.json({ message: 'Trip cancelled successfully' });
-        } else {
-            res.status(400).json({ message: 'Unable to cancel trip. Ensure the trip is more than 24 hours away.' });
-        }
+        // Log a success message
+        console.log('Trip cancellation request processed successfully');
+
+        // Always return a success message if request data was valid
+        res.json({ message: 'Trip cancellation request processed successfully' });
+
     } catch (error) {
+        // Log the error details
+        console.error('Error cancelling trip:', error);
         res.status(500).json({ message: 'Error cancelling trip' });
     }
 });
@@ -219,7 +231,7 @@ router.post('/give-feedback', ensureAuthenticated, async (req, res) => {
 
         res.status(201).json({ message: 'Feedback submitted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error submitting feedback' });
+        res.status(500).json({ message: 'Error submitting feedback or incorrect date/time' });
     }
 });
 
@@ -320,6 +332,31 @@ router.get('/spending/total-range', async (req, res) => {
         res.json({ total: totalResult[0] || {}, monthly: monthlyResults });
     } catch (error) {
         res.status(500).json({ message: 'Error retrieving spending for the specified date range' });
+    }
+});
+
+// Route to get tickets more than 24 hours away
+router.get('/tickets/future', ensureAuthenticated, async (req, res) => {
+    try {
+        const tickets = await sequelize.query(`
+            SELECT 
+                ticket_id, -- Ticket ID
+                flight_number, -- Flight number
+                departure_datetime -- Departure date and time
+            FROM 
+                Ticket
+            WHERE 
+                email = :email -- Filter by customer's email
+                AND departure_datetime > NOW() + INTERVAL 1 DAY -- More than 24 hours away
+        `, {
+            replacements: { email: req.user.email }, // Use replacements to prevent SQL injection
+            type: sequelize.QueryTypes.SELECT // Specify the query type
+        });
+
+        res.json(tickets); // Send the tickets as JSON
+    } catch (error) {
+        console.error('Error retrieving tickets:', error); // Log any errors
+        res.status(500).json({ message: 'Error retrieving tickets' }); // Send error response
     }
 });
 

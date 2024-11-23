@@ -1,5 +1,13 @@
 <h1>Customer Navigation</h1>
 <link rel="stylesheet" href="/css/main.css">
+<h1>My Booked Flights</h1>
+<ul id="flights-list" class="styled-list">
+    <% flights.forEach(flight => { %>
+        <li>
+            Flight: <%= flight.flight_number %> - <%= flight.departure_airport %> to <%= flight.arrival_airport %> on <%= new Date(flight.departure_datetime).toLocaleString() %> - Sold Price: $<%= flight.sold_price %>
+        </li>
+    <% }) %>
+</ul>
 
 <nav>
     <a href="/customer/ratings" class="btn">Ratings</a>

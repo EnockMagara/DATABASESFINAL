@@ -49,24 +49,18 @@ passport.serializeUser((user, done) => {
 
 // Deserialize user from session
 passport.deserializeUser((identifier, done) => {
-    console.log('Deserializing user with identifier:', identifier); // Debugging log
-
     // First, attempt to find the user as a Customer
     Customer.findOne({ where: { email: identifier } })
         .then(user => {
             if (user) {
-                console.log('Customer found:', user); // Debugging log
                 return done(null, user); // If found, return the customer
             }
-            console.log('Customer not found, checking AirlineStaff'); // Additional log
             // If not found as a Customer, attempt to find as AirlineStaff
             return AirlineStaff.findOne({ where: { username: identifier } })
                 .then(staff => {
                     if (staff) {
-                        console.log('AirlineStaff found:', staff); // Debugging log
                         return done(null, staff); // If found, return the staff
                     }
-                    console.log('AirlineStaff not found, user does not exist'); // Additional log
                     return done(new Error('User not found')); // If neither found, return error
                 });
         })
