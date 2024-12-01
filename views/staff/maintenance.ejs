@@ -2,13 +2,43 @@
 <link rel="stylesheet" href="/css/main.css">
 
 <form id="scheduleMaintenanceForm">
-    <!-- Form fields for scheduling maintenance -->
-    <!-- ... -->
+    <!-- Dropdown for Airplane ID -->
+    <label for="airplane_id">Select Airplane:</label>
+    <select id="airplane_id" name="airplane_id" required>
+        <!-- Options will be populated by JavaScript -->
+    </select>
+
+    <!-- Input for Start Date and Time -->
+    <label for="start_datetime">Start Date & Time:</label>
+    <input type="datetime-local" id="start_datetime" name="start_datetime" required>
+
+    <!-- Input for End Date and Time -->
+    <label for="end_datetime">End Date & Time:</label>
+    <input type="datetime-local" id="end_datetime" name="end_datetime" required>
+
     <button type="submit" class="btn">Schedule Maintenance</button>
 </form>
 <div id="scheduleMaintenanceResult"></div>
 
 <script>
+// Fetch and populate the airplane dropdown
+fetch('/staff/airplanes')
+    .then(response => response.json())
+    .then(airplanes => {
+        console.log('Airplanes received:', airplanes); // Debug: Log received airplanes
+        if (!Array.isArray(airplanes)) {
+            throw new Error('Expected an array of airplanes');
+        }
+        const airplaneSelect = document.getElementById('airplane_id');
+        airplanes.forEach(airplane => {
+            const option = document.createElement('option');
+            option.value = airplane.airplane_id;
+            option.text = `${airplane.manufacturing_company} ${airplane.model_number} - ${airplane.airplane_id}`;
+            airplaneSelect.add(option);
+        });
+    })
+    .catch(error => console.error('Error fetching airplanes:', error));
+
 // AJAX for scheduling maintenance
 document.getElementById('scheduleMaintenanceForm').addEventListener('submit', function(event) {
     event.preventDefault(); // Prevent the default form submission

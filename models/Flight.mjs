@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db.mjs';
 import Airline from './Airline.mjs';
 import Airport from './Airport.mjs';
+import Airplane from './Airplane.mjs';
 
 class Flight extends Model {}
 
@@ -36,7 +37,14 @@ Flight.init({
         }
     },
     base_price: DataTypes.DECIMAL(10, 2),
-    status: DataTypes.ENUM('on-time', 'delayed', 'canceled')
+    status: DataTypes.ENUM('on-time', 'delayed', 'canceled'),
+    airplane_id: {
+        type: DataTypes.INTEGER,
+        references: {
+            model: Airplane,
+            key: 'airplane_id'
+        }
+    }
 }, {
     sequelize,
     modelName: 'Flight',
@@ -47,5 +55,6 @@ Flight.init({
 Flight.belongsTo(Airline, { foreignKey: 'airline_name' });
 Flight.belongsTo(Airport, { as: 'DepartureAirport', foreignKey: 'departure_airport' });
 Flight.belongsTo(Airport, { as: 'ArrivalAirport', foreignKey: 'arrival_airport' });
+Flight.belongsTo(Airplane, { foreignKey: 'airplane_id' });
 
 export default Flight;

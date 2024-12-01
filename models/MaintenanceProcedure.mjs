@@ -6,8 +6,9 @@ class MaintenanceProcedure extends Model {}
 
 MaintenanceProcedure.init({
     procedure_id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true // Primary key for MaintenanceProcedure
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
     },
     airline_name: {
         type: DataTypes.STRING(100),

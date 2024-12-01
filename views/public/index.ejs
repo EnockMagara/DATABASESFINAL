@@ -81,15 +81,37 @@
                 // Display message if no flights found
                 resultDiv.innerHTML = '<p>No flights found.</p>';
             } else {
-                // Display flights if found, including airline name and base price
-                resultDiv.innerHTML = data.map(flight => `
-                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
-                `).join('');
+                // Create a table for the results
+                const table = `
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Airline</th>
+                                <th>Flight Number</th>
+                                <th>Route</th>
+                                <th>Departure</th>
+                                <th>Base Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(flight => `
+                                <tr>
+                                    <td>${flight['Airline']}</td>
+                                    <td>${flight['Flight Number']}</td>
+                                    <td>${flight['Departure Airport']} to ${flight['Arrival Airport']}</td>
+                                    <td>${new Date(flight['Departure Date & Time']).toLocaleString()}</td>
+                                    <td>$${flight['Base Price']}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                resultDiv.innerHTML = table;
             }
         })
         .catch(error => {
             console.error('Error:', error); // Log error
-            document.getElementById('toFlightResult').innerText = error.message; // Display error message
+            document.getElementById('toFlightResult').innerText = 'An error occurred while fetching flights.'; // Display error message
         });
     });
 
@@ -112,15 +134,37 @@
                 // Display message if no flights found
                 resultDiv.innerHTML = '<p>No flights found.</p>';
             } else {
-                // Display flights if found, including airline name and base price
-                resultDiv.innerHTML = data.map(flight => `
-                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
-                `).join('');
+                // Create a table for the results
+                const table = `
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Airline</th>
+                                <th>Flight Number</th>
+                                <th>Route</th>
+                                <th>Departure</th>
+                                <th>Base Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(flight => `
+                                <tr>
+                                    <td>${flight['Airline']}</td>
+                                    <td>${flight['Flight Number']}</td>
+                                    <td>${flight['Departure Airport']} to ${flight['Arrival Airport']}</td>
+                                    <td>${new Date(flight['Departure Date & Time']).toLocaleString()}</td>
+                                    <td>$${flight['Base Price']}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                resultDiv.innerHTML = table;
             }
         })
         .catch(error => {
             console.error('Error:', error); // Log error
-            document.getElementById('returnFlightResult').innerText = error.message; // Display error message
+            document.getElementById('returnFlightResult').innerText = 'An error occurred while fetching flights.'; // Display error message
         });
     });
 

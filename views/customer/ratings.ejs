@@ -3,14 +3,26 @@
 
 <!-- Section to display past flights -->
 <h2>My Past Flights</h2>
-<ul class="styled-list">
-    <% pastFlights.forEach(flight => { %>
-        <li>
-            Flight: <%= flight.flight_number %> - <%= flight.departure_airport %> to <%= flight.arrival_airport %>
-            on <%= new Date(flight.departure_datetime).toLocaleString() %> - Sold Price: $<%= flight.sold_price %>
-        </li>
-    <% }) %>
-</ul>
+<table class="styled-table">
+    <thead>
+        <tr>
+            <th>Flight Number</th>
+            <th>Route</th>
+            <th>Departure</th>
+            <th>Sold Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% pastFlights.forEach(flight => { %>
+            <tr>
+                <td><%= flight.flight_number %></td>
+                <td><%= flight.departure_airport %> to <%= flight.arrival_airport %></td>
+                <td><%= new Date(flight.departure_datetime).toLocaleString() %></td>
+                <td>$<%= flight.sold_price %></td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>
 
 <!-- Form to give feedback -->
 <h2>Give Feedback</h2>

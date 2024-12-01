@@ -1,13 +1,26 @@
 <h1>Customer Navigation</h1>
 <link rel="stylesheet" href="/css/main.css">
 <h1>My Booked Flights</h1>
-<ul id="flights-list" class="styled-list">
-    <% flights.forEach(flight => { %>
-        <li>
-            Flight: <%= flight.flight_number %> - <%= flight.departure_airport %> to <%= flight.arrival_airport %> on <%= new Date(flight.departure_datetime).toLocaleString() %> - Sold Price: $<%= flight.sold_price %>
-        </li>
-    <% }) %>
-</ul>
+<table id="flights-table" class="styled-table">
+    <thead>
+        <tr>
+            <th>Flight Number</th>
+            <th>Route</th>
+            <th>Departure</th>
+            <th>Sold Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% flights.forEach(flight => { %>
+            <tr>
+                <td><%= flight.flight_number %></td>
+                <td><%= flight.departure_airport %> to <%= flight.arrival_airport %></td>
+                <td><%= new Date(flight.departure_datetime).toLocaleString() %></td>
+                <td>$<%= flight.sold_price %></td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>
 
 <nav>
     <a href="/customer/ratings" class="btn">Ratings</a>

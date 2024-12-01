@@ -10,6 +10,9 @@
     <input type="text" name="arrival_airport" placeholder="Arrival Airport" required>
     <input type="number" name="base_price" placeholder="Base Price" required>
     <input type="text" name="status" placeholder="Status" required>
+    <select id="create_airplane_id" name="airplane_id" required>
+        <!-- Options will be populated by JavaScript -->
+    </select>
     <button type="submit">Create Flight</button>
 </form>
 <div id="createFlightResult"></div>
@@ -23,6 +26,9 @@
     <input type="text" name="arrival_airport" placeholder="Arrival Airport" required>
     <input type="number" name="base_price" placeholder="Base Price" required>
     <input type="text" name="status" placeholder="Status" required>
+    <select id="update_airplane_id" name="airplane_id" required>
+        <!-- Options will be populated by JavaScript -->
+    </select>
     <button type="submit">Update Flight</button>
 </form>
 <div id="updateFlightResult"></div>
@@ -57,6 +63,38 @@
     <button type="submit">Change Status</button>
 </form>
 <div id="changeFlightStatusResult"></div>
+
+<h2>Add Airport</h2>
+<form id="addAirportForm">
+    <input type="text" name="airport_code" placeholder="Airport Code" maxlength="3" required>
+    <input type="text" name="name" placeholder="Name" required>
+    <input type="text" name="city" placeholder="City" required>
+    <input type="text" name="country" placeholder="Country" required>
+    <input type="number" name="number_of_terminals" placeholder="Number of Terminals" required>
+    <select name="airport_type" required>
+        <option value="" disabled selected>Select Airport Type</option>
+        <option value="domestic">Domestic</option>
+        <option value="international">International</option>
+        <option value="both">Both</option>
+    </select>
+    <button type="submit" class="btn">Add Airport</button>
+</form>
+<div id="addAirportResult"></div>
+
+<h2>Add Airplane</h2>
+<form id="addAirplaneForm">
+    <input type="number" name="airplane_id" placeholder="Airplane ID" required>
+    <input type="number" name="number_of_seats" placeholder="Number of Seats" required>
+    <input type="text" name="manufacturing_company" placeholder="Manufacturing Company" required>
+    <input type="text" name="model_number" placeholder="Model Number" required>
+    <input type="date" name="manufacturing_date" placeholder="Manufacturing Date" required>
+    <button type="submit" class="btn">Add Airplane</button>
+</form>
+<div id="addAirplaneResult"></div>
+
+<h2>View Airplanes</h2>
+<button id="viewAirplanesButton" class="btn">View Airplanes</button>
+<div id="viewAirplanesResult"></div>
 
 <script>
 // AJAX for creating a new flight
@@ -129,10 +167,36 @@ document.getElementById('toFlightForm').addEventListener('submit', function(even
         if (!Array.isArray(data) || data.length === 0) {
             resultDiv.innerHTML = '<p>No flights found.</p>';
         } else {
-            // Include base price in the displayed information
-            resultDiv.innerHTML = data.map(flight => `
-                <p>${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+            // Create a table to display flight information with styles
+            let tableHTML = `
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Flight Number</th>
+                            <th>Departure Airport</th>
+                            <th>Arrival Airport</th>
+                            <th>Departure Date & Time</th>
+                            <th>Base Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            // Populate table rows with flight data
+            tableHTML += data.map(flight => `
+                <tr>
+                    <td>${flight['Flight Number']}</td>
+                    <td>${flight['Departure Airport']}</td>
+                    <td>${flight['Arrival Airport']}</td>
+                    <td>${formatDateTime(flight['Departure Date & Time'])}</td> <!-- Format date and time -->
+                    <td>$${flight['Base Price']}</td>
+                    <td>$${flight['Base Price']}</td>
+                </tr>
             `).join('');
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            resultDiv.innerHTML = tableHTML; // Insert the table into the result div
         }
     })
     .catch(error => {
@@ -140,6 +204,12 @@ document.getElementById('toFlightForm').addEventListener('submit', function(even
         document.getElementById('toFlightResult').innerText = error.message;
     });
 });
+
+// Function to format date and time
+function formatDateTime(isoString) {
+    const date = new Date(isoString); // Convert ISO string to Date object
+    return date.toLocaleString(); // Format date to local string
+}
 
 // AJAX for viewing the "return" flight
 document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
@@ -160,10 +230,35 @@ document.getElementById('returnFlightForm').addEventListener('submit', function(
         if (!Array.isArray(data) || data.length === 0) {
             resultDiv.innerHTML = '<p>No flights found.</p>';
         } else {
-            // Include base price in the displayed information
-            resultDiv.innerHTML = data.map(flight => `
-                <p>${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
+            // Create a table to display flight information with styles
+            let tableHTML = `
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Flight Number</th>
+                            <th>Departure Airport</th>
+                            <th>Arrival Airport</th>
+                            <th>Departure Date & Time</th>
+                            <th>Base Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            // Populate table rows with flight data
+            tableHTML += data.map(flight => `
+                <tr>
+                    <td>${flight['Flight Number']}</td>
+                    <td>${flight['Departure Airport']}</td>
+                    <td>${flight['Arrival Airport']}</td>
+                    <td>${formatDateTime(flight['Departure Date & Time'])}</td> <!-- Format date and time -->
+                    <td>$${flight['Base Price']}</td>
+                </tr>
             `).join('');
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            resultDiv.innerHTML = tableHTML; // Insert the table into the result div
         }
     })
     .catch(error => {
@@ -202,6 +297,99 @@ document.getElementById('changeFlightStatusForm').addEventListener('submit', fun
     .catch(error => {
         console.error('Error:', error);
         document.getElementById('changeFlightStatusResult').innerText = error.message;
+    });
+});
+
+// Fetch and populate the airplane dropdowns
+fetch('/staff/airplanes')
+    .then(response => response.json())
+    .then(airplanes => {
+        const createSelect = document.getElementById('create_airplane_id');
+        const updateSelect = document.getElementById('update_airplane_id');
+        airplanes.forEach(airplane => {
+            const option = document.createElement('option');
+            option.value = airplane.airplane_id;
+            option.text = `${airplane.manufacturing_company} ${airplane.model_number} - ${airplane.airplane_id}`;
+            createSelect.add(option.cloneNode(true));
+            updateSelect.add(option);
+        });
+    })
+    .catch(error => console.error('Error fetching airplanes:', error));
+
+// AJAX for adding an airport
+document.getElementById('addAirportForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    fetch('/staff/add-airport', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('addAirportResult').innerText = data.message;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('addAirportResult').innerText = 'Error adding airport';
+    });
+});
+
+// AJAX for adding an airplane
+document.getElementById('addAirplaneForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const formData = new FormData(this);
+    fetch('/staff/add-airplane', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('addAirplaneResult').innerText = data.message;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('addAirplaneResult').innerText = 'Error adding airplane';
+    });
+});
+
+// AJAX for viewing airplanes
+document.getElementById('viewAirplanesButton').addEventListener('click', function() {
+    fetch('/staff/view-airplanes', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('viewAirplanesResult');
+        if (Array.isArray(data) && data.length > 0) {
+            let table = `<table class="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>Airplane ID</th>
+                                    <th>Number of Seats</th>
+                                    <th>Manufacturing Company</th>
+                                    <th>Model Number</th>
+                                    <th>Manufacturing Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+            data.forEach(airplane => {
+                table += `<tr>
+                            <td>${airplane.airplane_id}</td>
+                            <td>${airplane.number_of_seats}</td>
+                            <td>${airplane.manufacturing_company}</td>
+                            <td>${airplane.model_number}</td>
+                            <td>${new Date(airplane.manufacturing_date).toLocaleDateString()}</td>
+                          </tr>`;
+            });
+            table += `</tbody></table>`;
+            resultDiv.innerHTML = table;
+        } else {
+            resultDiv.innerText = 'No airplanes found';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('viewAirplanesResult').innerText = 'Error retrieving airplanes';
     });
 });
 </script>

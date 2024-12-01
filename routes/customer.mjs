@@ -240,23 +240,26 @@ router.get('/spending/total-year', async (req, res) => {
     const { email } = req.user; // Assume email is extracted from session or JWT
 
     try {
-        const [result] = await sequelize.query(
+        // SQL query to get total spending for the past year
+        const result = await sequelize.query(
             `SELECT 
-                SUM(T.sold_price) AS total_spent
+                SUM(T.sold_price) AS total_spent -- Calculate the total spending
             FROM 
-                Ticket T
+                Ticket T -- From the Ticket table
+            JOIN 
+                Customer C ON T.email = C.email -- Join with Customer table to ensure valid customer
             WHERE 
-                T.email = ?
-                AND T.purchase_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR)`,
+                T.purchase_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR) -- Filter for the past year
+                AND C.email = ?; -- Filter by specific customer email`,
             {
-                replacements: [email],
-                type: sequelize.QueryTypes.SELECT
+                replacements: [email], // Use replacements to prevent SQL injection
+                type: sequelize.QueryTypes.SELECT // Specify the query type
             }
         );
 
-        res.json(result[0] || {});
+        res.json(result[0] || {}); // Send the result as JSON response
     } catch (error) {
-        res.status(500).json({ message: 'Error retrieving total spending for the past year' });
+        res.status(500).json({ message: 'Error retrieving total spending for the past year' }); // Send error response
     }
 });
 
@@ -265,7 +268,18 @@ router.get('/spending/monthly-last-6-months', async (req, res) => {
     const { email } = req.user;
 
     try {
-        const [results] = await sequelize.query(
+        // Get the current date
+        const currentDate = new Date();
+        
+        // Generate the last 6 months starting from the current month
+        const months = [];
+        for (let i = 0; i < 6; i++) {
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+            months.push(date.toISOString().slice(0, 7)); // Format as 'YYYY-MM'
+        }
+
+        // Execute the SQL query to get monthly spending
+        const results = await sequelize.query(
             `SELECT 
                 DATE_FORMAT(T.purchase_datetime, '%Y-%m') AS month,
                 SUM(T.sold_price) AS total_spent
@@ -277,14 +291,26 @@ router.get('/spending/monthly-last-6-months', async (req, res) => {
             GROUP BY 
                 month
             ORDER BY 
-                month`,
+                month DESC`, // Order by month in descending order
             {
                 replacements: [email],
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        res.json(results);
+        // Create a map of results for easy lookup
+        const spendingMap = results.reduce((acc, { month, total_spent }) => {
+            acc[month] = total_spent;
+            return acc;
+        }, {});
+
+        // Fill in missing months with zero spending
+        const completeResults = months.map(month => ({
+            month,
+            total_spent: spendingMap[month] || 0
+        }));
+
+        res.json(completeResults); // Send the complete results
     } catch (error) {
         res.status(500).json({ message: 'Error retrieving monthly spending for the last 6 months' });
     }
@@ -296,7 +322,7 @@ router.get('/spending/total-range', async (req, res) => {
     const { startDate, endDate } = req.query; // Assume dates are passed as query parameters
 
     try {
-        const [totalResult] = await sequelize.query(
+        const totalResult = await sequelize.query(
             `SELECT 
                 SUM(T.sold_price) AS total_spent
             FROM 
@@ -310,7 +336,7 @@ router.get('/spending/total-range', async (req, res) => {
             }
         );
 
-        const [monthlyResults] = await sequelize.query(
+        const monthlyResults = await sequelize.query(
             `SELECT 
                 DATE_FORMAT(T.purchase_datetime, '%Y-%m') AS month,
                 SUM(T.sold_price) AS total_spent

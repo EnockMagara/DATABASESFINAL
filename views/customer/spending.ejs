@@ -7,7 +7,9 @@
 <h2>Monthly Spending for the Last 6 Months</h2>
 <button id="monthlySpendingButton" class="btn">Get Monthly Spending</button>
 
-<div id="monthlySpendingResult"></div>
+<div id="monthlySpendingResult">
+    <canvas id="spendingChart"></canvas>
+</div>
 
 <h2>Total Spending for a Specified Date Range</h2>
 <form id="totalRangeSpendingForm">
@@ -22,6 +24,7 @@
 
 <div id="totalRangeSpendingResult"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.getElementById('totalYearSpendingButton').addEventListener('click', function() {
     fetch('/customer/spending/total-year', {
@@ -34,6 +37,7 @@ document.getElementById('totalYearSpendingButton').addEventListener('click', fun
         return response.json(); // Parse the response as JSON
     })
     .then(data => {
+        console.log('Total Year Spending Data:', data); // Log the data to inspect it
         if (data.total_spent !== undefined) {
             // Check if total_spent is present in the response
             document.getElementById('totalYearSpendingResult').innerText = `Total Spent: $${data.total_spent}`;
@@ -60,14 +64,38 @@ document.getElementById('monthlySpendingButton').addEventListener('click', funct
         return response.json(); // Parse the response as JSON
     })
     .then(data => {
+        console.log('Monthly Spending Data:', data); // Log the data to inspect it
         const resultDiv = document.getElementById('monthlySpendingResult');
-        if (Array.isArray(data)) {
-            // Check if data is an array
-            resultDiv.innerHTML = data.map(month => `<p>${month.month}: $${month.total_spent}</p>`).join('');
-        } else {
-            // Handle unexpected response format
-            resultDiv.innerText = 'Unexpected response format';
-        }
+        
+        // Clear previous content
+        resultDiv.innerHTML = '<canvas id="spendingChart"></canvas>';
+        
+        // Extract months and spending data
+        const months = data.map(item => item.month);
+        const spending = data.map(item => item.total_spent);
+
+        // Create the bar chart
+        const ctx = document.getElementById('spendingChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months, // Set the labels for the x-axis
+                datasets: [{
+                    label: 'Monthly Spending',
+                    data: spending, // Set the data for the y-axis
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)', // Bar color
+                    borderColor: 'rgba(75, 192, 192, 1)', // Border color
+                    borderWidth: 1 // Border width
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true // Start y-axis at zero
+                    }
+                }
+            }
+        });
     })
     .catch(error => {
         // Log the error and display a user-friendly message
@@ -89,6 +117,7 @@ document.getElementById('totalRangeSpendingForm').addEventListener('submit', fun
         return response.json(); // Parse the response as JSON
     })
     .then(data => {
+        console.log('Total Range Spending Data:', data); // Log the data to inspect it
         const resultDiv = document.getElementById('totalRangeSpendingResult');
         if (data.total && data.monthly && Array.isArray(data.monthly)) {
             // Check if total and monthly data are present and monthly is an array
