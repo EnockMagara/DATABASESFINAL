@@ -23,7 +23,31 @@
 </form>
 <div id="flightRatingsResult"></div>
 
+<h2>Flight Customers</h2>
+<form id="flightCustomersForm">
+    <label for="flightSelect">Select Flight:</label>
+    <select id="flightSelect" name="flightSelect" required>
+        <option value="" disabled selected>Select a flight</option>
+    </select>
+    <button type="submit" class="btn">View Customers</button>
+</form>
+<div id="flightCustomersResult"></div>
+
 <script>
+// Populate flight dropdown
+fetch('/staff/all-flights')
+    .then(response => response.json())
+    .then(flights => {
+        const flightSelect = document.getElementById('flightSelect');
+        flights.forEach(flight => {
+            const option = document.createElement('option');
+            option.value = `${flight.flight_number}|${flight.departure_datetime}`;
+            option.text = `${flight.airline_name} ${flight.flight_number} - ${new Date(flight.departure_datetime).toLocaleString()}`;
+            flightSelect.add(option);
+        });
+    })
+    .catch(error => console.error('Error fetching flights:', error));
+
 // Handle frequent customer view
 document.getElementById('frequentCustomerButton').addEventListener('click', function() {
     fetch('/staff/frequent-customer', {
@@ -155,6 +179,66 @@ document.getElementById('flightRatingsForm').addEventListener('submit', function
     .catch(error => {
         console.error('Error:', error);
         document.getElementById('flightRatingsResult').innerText = 'An error occurred while fetching flight ratings';
+    });
+});
+
+// Handle flight customers view
+document.getElementById('flightCustomersForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const selectedValue = document.getElementById('flightSelect').value;
+    const [flightNumber, departureDatetime] = selectedValue.split('|');
+
+    console.log('Selected flight:', { flightNumber, departureDatetime });
+
+    fetch(`/staff/flight-customers/${flightNumber}/${departureDatetime}`, {
+        method: 'GET'
+    })
+    .then(response => {
+        console.log('Raw response:', response);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Fetched customers:', data);
+
+        // Ensure data is an array
+        const customers = Array.isArray(data) ? data : [data];
+
+        const resultDiv = document.getElementById('flightCustomersResult');
+        if (customers.length > 0) {
+            let table = `<table class="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Ticket ID</th>
+                                    <th>Sold Price</th>
+                                    <th>Purchase Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+            customers.forEach(customer => {
+                table += `<tr>
+                            <td>${customer.email}</td>
+                            <td>${customer.first_name}</td>
+                            <td>${customer.last_name}</td>
+                            <td>${customer.ticket_id}</td>
+                            <td>$${customer.sold_price}</td>
+                            <td>${new Date(customer.purchase_datetime).toLocaleString()}</td>
+                          </tr>`;
+            });
+            table += `</tbody></table>`;
+            resultDiv.innerHTML = table;
+        } else {
+            resultDiv.innerText = 'No customers found or unexpected response format';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('flightCustomersResult').innerText = 'An error occurred while fetching flight customers';
     });
 });
 </script>

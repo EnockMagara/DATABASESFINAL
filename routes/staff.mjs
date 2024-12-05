@@ -270,7 +270,7 @@ router.get('/flight-customers/:flight_number/:departure_datetime', ensureAuthent
             }
         );
 
-        res.json(customers);
+        res.json(customers || []);
     } catch (error) {
         console.error('Error retrieving flight customers:', error);
         res.status(500).json({ message: 'Error retrieving flight customers' });
@@ -548,6 +548,27 @@ router.get('/monthly-ticket-sales', ensureAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('Error retrieving monthly ticket sales:', error);
         res.status(500).json({ message: 'Error retrieving monthly ticket sales' });
+    }
+});
+
+router.get('/all-flights', ensureAuthenticated, async (req, res) => {
+    try {
+        const flights = await sequelize.query(
+            `SELECT 
+                airline_name, 
+                flight_number, 
+                departure_datetime 
+            FROM 
+                Flight`,
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        res.json(flights);
+    } catch (error) {
+        console.error('Error fetching flights:', error);
+        res.status(500).json({ message: 'Error fetching flights' });
     }
 });
 

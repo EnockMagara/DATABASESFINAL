@@ -65,6 +65,8 @@ router.get('/search-flights', async (req, res) => {
 router.get('/flight-status', async (req, res) => {
     const { airline, flightNumber, date } = req.query;
 
+    console.log('Flight status query parameters:', { airline, flightNumber, date });
+
     try {
         const [flight] = await sequelize.query(
             `SELECT 
@@ -93,6 +95,7 @@ router.get('/flight-status', async (req, res) => {
             res.status(404).json({ message: 'Flight not found' });
         }
     } catch (error) {
+        console.error('Error retrieving flight status:', error);
         res.status(500).json({ message: 'Error retrieving flight status' });
     }
 });
