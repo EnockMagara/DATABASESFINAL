@@ -1,41 +1,35 @@
 import express from 'express';
-import Flight from '../models/Flight.mjs'; // Import the Flight model
-import Rates from '../models/Rates.mjs'; // Import the Rates model
-import Maintenance from '../models/MaintenanceProcedure.mjs'; // Import the Maintenance model
-import Ticket from '../models/Ticket.mjs'; // Import the Ticket model
-import { Op } from 'sequelize'; // Import Sequelize operators
-import ensureAuthenticated from '../middleware/authMiddleware.mjs'; // Ensure this middleware is imported
-import sequelize from '../config/db.mjs'; // Import the sequelize instance
+import Flight from '../models/Flight.mjs';
+import Rates from '../models/Rates.mjs';
+import Maintenance from '../models/MaintenanceProcedure.mjs';
+import Ticket from '../models/Ticket.mjs';
+import { Op } from 'sequelize';
+import ensureAuthenticated from '../middleware/authMiddleware.mjs';
+import sequelize from '../config/db.mjs';
 
 const router = express.Router();
 
-// Route to render the manage flights page
 router.get('/manage-flights', ensureAuthenticated, (req, res) => {
-    res.render('staff/manageFlights'); // Render the manageFlights.ejs view
+    res.render('staff/manageFlights');
 });
 
-// Route to render the analytics page
 router.get('/analytics', ensureAuthenticated, (req, res) => {
-    res.render('staff/analytics'); // Render the analytics.ejs view
+    res.render('staff/analytics');
 });
 
-// Route to render the maintenance page
 router.get('/maintenance', ensureAuthenticated, (req, res) => {
-    res.render('staff/maintenance'); // Render the maintenance.ejs view
+    res.render('staff/maintenance');
 });
 
-// Route to render the revenue page
 router.get('/revenue', ensureAuthenticated, (req, res) => {
-    res.render('staff/revenue'); // Render the revenue.ejs view
+    res.render('staff/revenue');
 });
 
-// Route to create a new flight
 router.post('/create-flight', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user;
-    const { flight_number, departure_datetime, departure_airport, arrival_airport, base_price, status, airplane_id } = req.body;
+    const { flight_number, departure_datetime, arrival_datetime, departure_airport, arrival_airport, base_price, status, airplane_id } = req.body;
 
     try {
-        // Check if the airplane is under maintenance during the flight time
         const [maintenance] = await sequelize.query(
             `SELECT * FROM MaintenanceProcedure 
             WHERE airplane_id = ? 
@@ -48,15 +42,15 @@ router.post('/create-flight', ensureAuthenticated, async (req, res) => {
             }
         );
 
-        if (maintenance.length > 0) {
+        if (Array.isArray(maintenance) && maintenance.length > 0) {
             return res.status(409).json({ message: 'Airplane is under maintenance during this time' });
         }
 
         const [result] = await sequelize.query(
-            `INSERT INTO Flight (airline_name, flight_number, departure_datetime, departure_airport, arrival_airport, base_price, status, airplane_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO Flight (airline_name, flight_number, departure_datetime, arrival_datetime, departure_airport, arrival_airport, base_price, status, airplane_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             {
-                replacements: [airline_name, flight_number, departure_datetime, departure_airport, arrival_airport, base_price, status, airplane_id],
+                replacements: [airline_name, flight_number, departure_datetime, arrival_datetime, departure_airport, arrival_airport, base_price, status, airplane_id],
                 type: sequelize.QueryTypes.INSERT
             }
         );
@@ -68,14 +62,12 @@ router.post('/create-flight', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// Route to update an existing flight
 router.put('/update-flight/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
     const { departure_airport, arrival_airport, base_price, status, airplane_id } = req.body;
     const airline_name = req.user.airline_name;
 
     try {
-        // Check if the airplane is under maintenance during the flight time
         const [maintenance] = await sequelize.query(
             `SELECT * FROM MaintenanceProcedure 
             WHERE airplane_id = ? 
@@ -88,7 +80,7 @@ router.put('/update-flight/:flight_number/:departure_datetime', ensureAuthentica
             }
         );
 
-        if (maintenance.length > 0) {
+        if (Array.isArray(maintenance) && maintenance.length > 0) {
             return res.status(409).json({ message: 'Airplane is under maintenance during this time' });
         }
 
@@ -113,10 +105,9 @@ router.put('/update-flight/:flight_number/:departure_datetime', ensureAuthentica
     }
 });
 
-// Route to view flight ratings
 router.get('/flight-ratings/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
-    const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
+    const { airline_name } = req.user;
 
     try {
         const ratings = await sequelize.query(
@@ -145,23 +136,18 @@ router.get('/flight-ratings/:flight_number/:departure_datetime', ensureAuthentic
 
         res.json(ratings);
     } catch (error) {
-        console.error('Error retrieving flight ratings:', error); // Log the error for debugging
+        console.error('Error retrieving flight ratings:', error);
         res.status(500).json({ message: 'Error retrieving flight ratings' });
     }
 });
 
-// Route to schedule maintenance
 router.post('/schedule-maintenance', ensureAuthenticated, async (req, res) => {
-    // Extract airline_name from the authenticated user's data
     const airline_name = req.user.airline_name;
-    
-    // Extract airplane_id, start_datetime, and end_datetime from the request body
     const airplane_id = req.body.airplane_id;
     const start_datetime = req.body.start_datetime;
     const end_datetime = req.body.end_datetime;
 
     try {
-        // Check if the airplane is already scheduled for maintenance during the given period
         const [existingMaintenance] = await sequelize.query(
             `SELECT * FROM MaintenanceProcedure 
             WHERE airplane_id = ? 
@@ -176,13 +162,12 @@ router.post('/schedule-maintenance', ensureAuthenticated, async (req, res) => {
             }
         );
 
-        console.log('Existing maintenance:', existingMaintenance); // Debug: Log the result
+        console.log('Existing maintenance:', existingMaintenance);
 
         if (Array.isArray(existingMaintenance) && existingMaintenance.length > 0) {
             return res.status(409).json({ message: 'Airplane is already scheduled for maintenance during this period' });
         }
 
-        // Insert the new maintenance schedule into the database
         const [result] = await sequelize.query(
             `INSERT INTO MaintenanceProcedure (airline_name, airplane_id, start_datetime, end_datetime)
             VALUES (?, ?, ?, ?)`,
@@ -194,21 +179,18 @@ router.post('/schedule-maintenance', ensureAuthenticated, async (req, res) => {
 
         res.status(201).json({ message: 'Maintenance scheduled successfully', maintenanceId: result });
     } catch (error) {
-        console.error('Error scheduling maintenance:', error); // Log the error for debugging
+        console.error('Error scheduling maintenance:', error);
         res.status(500).json({ message: 'Error scheduling maintenance' });
     }
 });
 
-// Route to view flights
 router.get('/view-flights', ensureAuthenticated, async (req, res) => {
-    const { username } = req.user; // Assume username is extracted from session or JWT
-    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query; // Query parameters
+    const { username } = req.user;
+    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query;
 
     try {
-        // Log the query parameters for debugging
         console.log('Query parameters:', { departureAirport, arrivalAirport, departureDate, returnDate });
 
-        // Construct the SQL query with the provided conditions
         const query = `
             SELECT 
                 airline_name AS "Airline",
@@ -236,39 +218,34 @@ router.get('/view-flights', ensureAuthenticated, async (req, res) => {
             ORDER BY 
                 departure_datetime`;
 
-        // Prepare replacements array
         const replacements = [
             departureAirport, arrivalAirport, departureDate,
             ...(returnDate ? [arrivalAirport, departureAirport, returnDate] : [])
         ];
 
-        // Execute the query with replacements
         const [flights] = await sequelize.query(query, {
             replacements,
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Ensure the result is always an array
         const resultArray = Array.isArray(flights) ? flights : [flights];
 
-        // Check if flights is undefined or empty
         if (!resultArray || resultArray.length === 0) {
             console.log('No flights found');
-            return res.json([]); // Return an empty array if no flights are found
+            return res.json([]);
         }
 
-        console.log('Flights retrieved:', resultArray); // Log the flights retrieved
-        res.json(resultArray); // Ensure a JSON response is always sent
+        console.log('Flights retrieved:', resultArray);
+        res.json(resultArray);
     } catch (error) {
-        console.error('Error retrieving flights:', error); // Log the error for debugging
-        res.status(500).json({ message: 'Error retrieving flights' }); // Send a JSON error response
+        console.error('Error retrieving flights:', error);
+        res.status(500).json({ message: 'Error retrieving flights' });
     }
 });
 
-// Route to view flight customers
 router.get('/flight-customers/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime } = req.params;
-    const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
+    const { airline_name } = req.user;
 
     try {
         const [customers] = await sequelize.query(
@@ -295,14 +272,13 @@ router.get('/flight-customers/:flight_number/:departure_datetime', ensureAuthent
 
         res.json(customers);
     } catch (error) {
-        console.error('Error retrieving flight customers:', error); // Log the error for debugging
+        console.error('Error retrieving flight customers:', error);
         res.status(500).json({ message: 'Error retrieving flight customers' });
     }
 });
 
-// Route to change flight status
-router.put('/change-flight-status/:flight_number/:departure_datetime', ensureAuthenticated, async (req, res) => {
-    const { flight_number, departure_datetime } = req.params;
+router.put('/change-flight-status/:flight_number/:departure_datetime/:arrival_datetime', ensureAuthenticated, async (req, res) => {
+    const { flight_number, departure_datetime, arrival_datetime } = req.params;
     const { status } = req.body;
     const { airline_name } = req.user;
 
@@ -312,17 +288,17 @@ router.put('/change-flight-status/:flight_number/:departure_datetime', ensureAut
             SET status = ?
             WHERE airline_name = ?
             AND flight_number = ?
-            AND departure_datetime = ?`,
+            AND departure_datetime = ?
+            AND arrival_datetime = ?`,
             {
-                replacements: [status, airline_name, flight_number, departure_datetime],
+                replacements: [status, airline_name, flight_number, departure_datetime, arrival_datetime],
                 type: sequelize.QueryTypes.UPDATE
             }
         );
 
-        console.log('Update result:', result); // Log the update result
+        console.log('Update result:', result);
 
-        // Check if any rows were affected
-        if (result[1] > 0) { // Check the second element for affected rows
+        if (result[1] > 0) {
             res.json({ message: 'Flight status updated successfully' });
         } else {
             res.status(404).json({ message: 'Flight not found' });
@@ -333,9 +309,8 @@ router.put('/change-flight-status/:flight_number/:departure_datetime', ensureAut
     }
 });
 
-// Route to add an airplane
 router.post('/add-airplane', ensureAuthenticated, async (req, res) => {
-    const { airline_name } = req.user; 
+    const { airline_name } = req.user;
     const { airplane_id, number_of_seats, manufacturing_company, model_number, manufacturing_date } = req.body;
 
     try {
@@ -350,12 +325,11 @@ router.post('/add-airplane', ensureAuthenticated, async (req, res) => {
 
         res.status(201).json({ message: 'Airplane added successfully', airplaneId: result });
     } catch (error) {
-        console.error('Error adding airplane:', error); // Log the error for debugging
+        console.error('Error adding airplane:', error);
         res.status(500).json({ message: 'Error adding airplane' });
     }
 });
 
-// Route to view all airplanes owned by the airline
 router.get('/view-airplanes', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user;
 
@@ -370,12 +344,11 @@ router.get('/view-airplanes', ensureAuthenticated, async (req, res) => {
 
         res.json(airplanes);
     } catch (error) {
-        console.error('Error retrieving airplanes:', error); // Log the error for debugging
+        console.error('Error retrieving airplanes:', error);
         res.status(500).json({ message: 'Error retrieving airplanes' });
     }
 });
 
-// Route to add an airport
 router.post('/add-airport', ensureAuthenticated, async (req, res) => {
     const { airport_code, name, city, country, number_of_terminals, airport_type } = req.body;
 
@@ -391,14 +364,13 @@ router.post('/add-airport', ensureAuthenticated, async (req, res) => {
 
         res.status(201).json({ message: 'Airport added successfully', airportCode: result });
     } catch (error) {
-        console.error('Error adding airport:', error); // Log the error for debugging
+        console.error('Error adding airport:', error);
         res.status(500).json({ message: 'Error adding airport' });
     }
 });
 
-// Route to view frequent customer
 router.get('/frequent-customer', ensureAuthenticated, async (req, res) => {
-    const { airline_name } = req.user; // Assume airline_name is extracted from session or JWT
+    const { airline_name } = req.user;
 
     try {
         const [frequentCustomer] = await sequelize.query(
@@ -427,12 +399,11 @@ router.get('/frequent-customer', ensureAuthenticated, async (req, res) => {
 
         res.json(frequentCustomer);
     } catch (error) {
-        console.error('Error retrieving frequent customer:', error); // Log the error for debugging
+        console.error('Error retrieving frequent customer:', error);
         res.status(500).json({ message: 'Error retrieving frequent customer' });
     }
 });
 
-// Route to view customer flights
 router.get('/customer-flights/:email', ensureAuthenticated, async (req, res) => {
     const { email } = req.params;
     const { airline_name } = req.user;
@@ -463,14 +434,13 @@ router.get('/customer-flights/:email', ensureAuthenticated, async (req, res) => 
             }
         );
 
-        res.json(flights); 
+        res.json(flights);
     } catch (error) {
         console.error('Error retrieving customer flights:', error);
         res.status(500).json({ message: 'Error retrieving customer flights' });
     }
 });
 
-// Route to view earned revenue
 router.get('/earned-revenue', ensureAuthenticated, async (req, res) => {
     try {
         const [revenueLastMonth] = await sequelize.query(
@@ -499,12 +469,11 @@ router.get('/earned-revenue', ensureAuthenticated, async (req, res) => {
 
         res.json({ revenueLastMonth, revenueLastYear });
     } catch (error) {
-        console.error('Error retrieving earned revenue:', error); // Log the error for debugging
+        console.error('Error retrieving earned revenue:', error);
         res.status(500).json({ message: 'Error retrieving earned revenue' });
     }
 });
 
-// Route to get list of available airplanes for dropdown
 router.get('/airplanes', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user;
 
@@ -526,7 +495,7 @@ router.get('/airplanes', ensureAuthenticated, async (req, res) => {
             }
         );
 
-        console.log('Available airplanes:', airplanes); // Debug: Log available airplanes
+        console.log('Available airplanes:', airplanes);
         res.json(airplanes);
     } catch (error) {
         console.error('Error retrieving airplanes:', error);
@@ -534,7 +503,6 @@ router.get('/airplanes', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// Route to get list of departed flights
 router.get('/departed-flights', ensureAuthenticated, async (req, res) => {
     const { airline_name } = req.user;
 
@@ -554,6 +522,32 @@ router.get('/departed-flights', ensureAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('Error retrieving departed flights:', error);
         res.status(500).json({ message: 'Error retrieving departed flights' });
+    }
+});
+
+router.get('/monthly-ticket-sales', ensureAuthenticated, async (req, res) => {
+    try {
+        const monthlySales = await sequelize.query(
+            `SELECT 
+                DATE_FORMAT(T.purchase_datetime, '%Y-%m') AS month,
+                COUNT(T.ticket_id) AS tickets_sold
+            FROM 
+                Ticket T
+            WHERE 
+                T.purchase_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+            GROUP BY 
+                month
+            ORDER BY 
+                month`,
+            {
+                type: sequelize.QueryTypes.SELECT
+            }
+        );
+
+        res.json(monthlySales);
+    } catch (error) {
+        console.error('Error retrieving monthly ticket sales:', error);
+        res.status(500).json({ message: 'Error retrieving monthly ticket sales' });
     }
 });
 

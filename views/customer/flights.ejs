@@ -1,3 +1,4 @@
+<%- include('../header') %>
 <h2>Search Flights</h2>
 <link rel="stylesheet" href="/css/main.css">
 <form id="toFlightForm">
@@ -8,7 +9,7 @@
 </form>
 <div id="toFlightResult"></div>
 
-<!-- Form for the "return" flight -->
+<!-- Return flight form -->
 <form id="returnFlightForm">
     <input type="text" name="departureAirport" placeholder="Departure Airport" required>
     <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
@@ -19,64 +20,59 @@
 
 
 <script>
-    // AJAX for viewing the "to" flight
+
     document.getElementById('toFlightForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
 
-        // Collect form data
         const formData = new FormData(this);
-        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+        const queryParams = new URLSearchParams(formData).toString();
 
-        // Fetch flights with query parameters
         fetch(`/public/search-flights?${queryParams}`, {
             method: 'GET'
         })
         .then(response => response.json())
         .then(data => {
-            const resultDiv = document.getElementById('toFlightResult'); // Get result div
+            const resultDiv = document.getElementById('toFlightResult');
             if (!Array.isArray(data) || data.length === 0) {
-                // Display message if no flights found
+       
                 resultDiv.innerHTML = '<p>No flights found.</p>';
             } else {
-                // Display flights if found, including airline name and base price
                 resultDiv.innerHTML = data.map(flight => `
                     <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
                 `).join('');
             }
         })
         .catch(error => {
-            console.error('Error:', error); // Log error
-            document.getElementById('toFlightResult').innerText = error.message; // Display error message
+            console.error('Error:', error);
+            document.getElementById('toFlightResult').innerText = error.message; 
         });
     });
 
-    // AJAX for viewing the "return" flight
+
     document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault(); 
 
-        // Collect form data
         const formData = new FormData(this);
-        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+        const queryParams = new URLSearchParams(formData).toString(); 
 
-        // Fetch flights with query parameters
         fetch(`/public/search-flights?${queryParams}`, {
             method: 'GET'
         })
         .then(response => response.json())
         .then(data => {
-            const resultDiv = document.getElementById('returnFlightResult'); // Get result div
+            const resultDiv = document.getElementById('returnFlightResult'); 
             if (!Array.isArray(data) || data.length === 0) {
-                // Display message if no flights found
+
                 resultDiv.innerHTML = '<p>No flights found.</p>';
             } else {
-                // Display flights if found, including airline name and base price
+ 
                 resultDiv.innerHTML = data.map(flight => `
                     <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
                 `).join('');
             }
         })
         .catch(error => {
-            console.error('Error:', error); // Log error
-            document.getElementById('returnFlightResult').innerText = error.message; // Display error message
+            console.error('Error:', error);
+            document.getElementById('returnFlightResult').innerText = error.message; 
         });
     });

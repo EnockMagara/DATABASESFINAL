@@ -22,6 +22,10 @@ Flight.init({
         type: DataTypes.DATE,
         primaryKey: true // Part of composite primary key
     },
+    arrival_datetime: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
     departure_airport: {
         type: DataTypes.CHAR(3),
         references: {

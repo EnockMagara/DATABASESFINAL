@@ -66,7 +66,13 @@ h1 {
 /* Center and animate the welcome text */
 h2 {
     text-align: center; /* Center the text */
-    color: #e8dede; /* White color for contrast */
+    color: #000000; 
+    margin-top: 20px; /* Add some margin at the top */
+    animation: fadeIn 2s ease-in-out; /* Apply fade-in animation */
+}
+.custom-h2 {
+    text-align: center; /* Center the text */
+    color: #fbfbfb; /* White color for contrast */
     margin-top: 20px; /* Add some margin at the top */
     animation: fadeIn 2s ease-in-out; /* Apply fade-in animation */
 }
@@ -174,3 +180,54 @@ form button:hover {
 .styled-table tr:last-of-type {
     border-bottom: 2px solid #444; /* Stronger border for last row */
 }
+
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #253A3A; /* Background color for header */
+    color: #fff; /* Text color */
+}
+
+.logo {
+    height: 100px; /* Increase the height of the logo */
+    width: auto; /* Maintain aspect ratio */
+}
+
+nav ul {
+    list-style: none; /* Remove default list styling */
+    display: flex; /* Display list items in a row */
+    gap: 15px; /* Space between list items */
+}
+
+nav ul li {
+    display: inline; /* Inline list items */
+}
+
+nav ul li a {
+    color: #fff; /* Link color */
+    text-decoration: none; /* Remove underline from links */
+    padding: 5px 10px; /* Padding for clickable area */
+    border-radius: 5px; /* Rounded corners */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+nav ul li a:hover {
+    background-color: #555; /* Change background on hover */
+}
+
+.logout-btn {
+    background-color: #f07d75; /* Red background for logout button */
+    color: #fff; /* White text for contrast */
+    padding: 5px 10px; /* Padding for button size */
+    border-radius: 5px; /* Rounded corners for button */
+    text-decoration: none; /* Remove underline */
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.logout-btn:hover {
+    background-color: #d32f2f; /* Darker red on hover */
+}
+

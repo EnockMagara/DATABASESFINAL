@@ -1,7 +1,8 @@
+<%- include('../header') %>
 <h1>Manage Flights</h1>
 <link rel="stylesheet" href="/css/main.css">
 
-<!-- Section to display past flights -->
+<!-- Past flights table -->
 <h2>My Past Flights</h2>
 <table class="styled-table">
     <thead>
@@ -24,7 +25,7 @@
     </tbody>
 </table>
 
-<!-- Form to give feedback -->
+<!-- Feedback form -->
 <h2>Give Feedback</h2>
 <form id="giveFeedbackForm">
     <label for="flight_number">Flight Number:</label>
@@ -43,12 +44,12 @@
 </form>
 <div id="feedbackResult"></div>
 
-<!-- Form to cancel trip -->
+<!-- Trip cancellation form -->
 <h2>Cancel Trip</h2>
 <form id="cancelTripForm">
     <label for="ticket_id">Select Ticket:</label>
     <select id="ticket_id" name="ticket_id" required>
-        <!-- Options will be populated by JavaScript -->
+        <!-- Options populated dynamically -->
     </select>
 
     <button type="submit" class="btn">Cancel Trip</button>
@@ -57,29 +58,27 @@
 
 <script>
 document.getElementById('giveFeedbackForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
-    const formData = new FormData(this); // Create a FormData object from the form
+    event.preventDefault();
+    const formData = new FormData(this);
     fetch('/customer/give-feedback', {
-        method: 'POST', // Use POST method to send data
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
+        body: new URLSearchParams(formData)
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+            throw new Error('Network response was not ok');
         }
-        return response.json(); // Parse the response as JSON
+        return response.json();
     })
     .then(data => {
-        // Check if the message is present in the response
         document.getElementById('feedbackResult').innerText = data.message || 'Feedback submitted successfully!';
     })
     .catch(error => {
-        // Log the error and display a user-friendly message
         console.error('Error:', error);
-        document.getElementById('feedbackResult').innerText = 'An error occurred while submitting feedback.';
+        document.getElementById('feedbackResult').innerText = 'The flight does not exist or the departure date and time are incorrect.';
     });
 });
 
@@ -101,27 +100,25 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.getElementById('cancelTripForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
-    const formData = new FormData(this); // Create a FormData object from the form
+    event.preventDefault();
+    const formData = new FormData(this);
     fetch('/customer/cancel-trip', {
-        method: 'POST', // Use POST method to send data
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
+        body: new URLSearchParams(formData)
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+            throw new Error('Network response was not ok');
         }
-        return response.json(); // Parse the response as JSON
+        return response.json();
     })
     .then(data => {
-        // Check if the message is present in the response
         document.getElementById('cancelResult').innerText = data.message || 'Trip cancelled successfully!';
     })
     .catch(error => {
-        // Log the error and display a user-friendly message
         console.error('Error:', error);
         document.getElementById('cancelResult').innerText = 'An error occurred while cancelling the trip.';
     });

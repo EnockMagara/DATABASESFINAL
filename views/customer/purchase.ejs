@@ -1,42 +1,18 @@
+<%- include('../header') %>
 <h2>Search Flights</h2>
-<link rel="stylesheet" href="/css/main.css"> <!-- Link to the CSS file -->
-<!-- Form for the "to" flight -->
-<form id="toFlightForm">
-    <!-- Input for departure airport -->
-    <input type="text" name="departureAirport" placeholder="Departure Airport" required>
-    <!-- Input for arrival airport -->
-    <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
-    <!-- Input for departure date -->
-    <input type="date" name="departureDate" placeholder="Departure Date" required>
-    <!-- Checkbox for round trip -->
-    <label>
-        <input type="checkbox" id="roundTrip" name="roundTrip"> Round Trip
-    </label>
-    <!-- Input for return date -->
-    <input type="date" id="returnDate" name="returnDate" placeholder="Return Date" disabled>
-    <!-- Button to submit the form and view the "to" flight -->
-    <button type="submit" class="btn">View Departure Flight</button>
-</form>
-<!-- Div to display the result of the "to" flight search -->
-<div id="toFlightResult"></div>
+<link rel="stylesheet" href="/css/main.css">
 
-<!-- Form for the "return" flight -->
-<form id="returnFlightForm">
-    <!-- Input for departure airport -->
+<form id="flightSearchForm">
     <input type="text" name="departureAirport" placeholder="Departure Airport" required>
-    <!-- Input for arrival airport -->
     <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
-    <!-- Input for return date -->
-    <input type="date" name="departureDate" placeholder="Return Date" required>
-    <!-- Button to submit the form and view the "return" flight -->
-    <button type="submit" class="btn">View Return Flight</button>
+    <input type="date" name="departureDate" placeholder="Departure Date" required>
+    <button type="submit" class="btn">Search Flights</button>
 </form>
-<!-- Div to display the result of the "return" flight search -->
-<div id="returnFlightResult"></div>
+
+<div id="flightResult"></div>
 
 <h2>Purchase Ticket</h2>
 <form id="purchaseTicketForm">
-    <!-- Include all necessary fields for purchasing a ticket -->
     <label for="airline_name">Airline Name:</label>
     <input type="text" id="airline_name" name="airline_name" required readonly>
 
@@ -46,13 +22,15 @@
     <label for="departure_datetime">Departure Date & Time:</label>
     <input type="datetime-local" id="departure_datetime" name="departure_datetime" required readonly>
 
+    <label for="arrival_datetime">Arrival Date & Time:</label>
+    <input type="datetime-local" id="arrival_datetime" name="arrival_datetime" required readonly>
+
     <label for="email">Email:</label>
     <input type="email" id="email" name="email" required>
 
     <label for="sold_price">Price:</label>
     <input type="number" id="sold_price" name="sold_price" required>
 
-    <!-- Card details -->
     <label for="card_number">Card Number:</label>
     <input type="text" id="card_number" name="card_number" required>
 
@@ -62,7 +40,6 @@
     <label for="card_expiration_date">Card Expiration Date:</label>
     <input type="month" id="card_expiration_date" name="card_expiration_date" required>
 
-    <!-- Passenger information -->
     <label for="passenger_first_name">Passenger First Name:</label>
     <input type="text" id="passenger_first_name" name="passenger_first_name" required>
 
@@ -79,119 +56,81 @@
 
 <script>
 document.getElementById('purchaseTicketForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
-    const formData = new FormData(this); // Create a FormData object from the form
+    event.preventDefault();
+    const formData = new FormData(this);
 
-    // Log form data for debugging
+    console.log('Form data being sent:');
     for (let [key, value] of formData.entries()) {
         console.log(`${key}: ${value}`);
     }
 
     fetch('/customer/purchase-ticket', {
-        method: 'POST', // Use POST method to send data
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
+        body: new URLSearchParams(formData)
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+            throw new Error('Network response was not ok');
         }
-        return response.json(); // Parse the response as JSON
+        return response.json();
     })
     .then(data => {
         const purchaseResultDiv = document.getElementById('purchaseResult');
         if (data.message) {
-            // Check if the message is present in the response
-            purchaseResultDiv.innerText = data.message; // Display the message from the response
+            purchaseResultDiv.innerText = `${data.message}. Price: $${data.price}`;
         } else {
-            // Handle unexpected response format
             purchaseResultDiv.innerText = 'Unexpected response format';
         }
     })
     .catch(error => {
-        // Log the error and display a user-friendly message
         console.error('Error:', error);
         document.getElementById('purchaseResult').innerText = 'An error occurred while processing your purchase';
     });
 });
 
-    // AJAX for viewing the "to" flight
-    document.getElementById('toFlightForm').addEventListener('submit', function(event) {
-        event.preventDefault();
+document.getElementById('flightSearchForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-        const formData = new FormData(this);
-        const queryParams = new URLSearchParams(formData).toString();
+    const formData = new FormData(this);
+    const queryParams = new URLSearchParams(formData).toString();
 
-        fetch(`/customer/search-flights?${queryParams}`, {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            const resultDiv = document.getElementById('toFlightResult');
-            if (!Array.isArray(data) || data.length === 0) {
-                resultDiv.innerHTML = '<p>No flights found.</p>';
-            } else {
-                resultDiv.innerHTML = data.map(flight => `
-                    <div>
-                        <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
-                        <button onclick="selectFlight('${flight['Airline']}', '${flight['Flight Number']}', '${flight['Departure Date & Time']}', '${flight['Base Price']}')">Select</button>
-                    </div>
-                `).join('');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('toFlightResult').innerText = error.message;
-        });
+    fetch(`/customer/search-flights?${queryParams}`, {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('flightResult');
+        if (!Array.isArray(data) || data.length === 0) {
+            resultDiv.innerHTML = '<p>No flights found.</p>';
+        } else {
+            resultDiv.innerHTML = data.map(flight => `
+                <div>
+                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Arrival: ${flight['Arrival Date & Time']} - Base Price: $${flight['Base Price']}</p>
+                    <button onclick="selectFlight('${flight['Airline']}', '${flight['Flight Number']}', '${flight['Departure Date & Time']}', '${flight['Arrival Date & Time']}', '${flight['Base Price']}')">Select</button>
+                </div>
+            `).join('');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('flightResult').innerText = error.message;
     });
+});
 
-    // Function to populate the purchase form with selected flight details
-    function selectFlight(airline, flightNumber, departureDateTime, basePrice) {
-        const date = new Date(departureDateTime);
-        const formattedDateTime = date.toISOString().slice(0, 16);
+function selectFlight(airline, flightNumber, departureDateTime, arrivalDateTime, basePrice) {
+    const departureDate = new Date(departureDateTime);
+    const arrivalDate = new Date(arrivalDateTime);
+    
+    const formattedDeparture = departureDate.toISOString().slice(0, 19);
+    const formattedArrival = arrivalDate.toISOString().slice(0, 19);
 
-        document.getElementById('airline_name').value = airline;
-        document.getElementById('flight_number').value = flightNumber;
-        document.getElementById('departure_datetime').value = formattedDateTime;
-        document.getElementById('sold_price').value = basePrice; // Set the base price
-    }
-
-    // AJAX for viewing the "return" flight
-    document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Collect form data
-        const formData = new FormData(this);
-        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
-
-        // Fetch flights with query parameters
-        fetch(`/customer/search-flights?${queryParams}`, {
-            method: 'GET'
-        })
-        .then(response => response.json())
-        .then(data => {
-            const resultDiv = document.getElementById('returnFlightResult'); // Get result div
-            if (!Array.isArray(data) || data.length === 0) {
-                // Display message if no flights found
-                resultDiv.innerHTML = '<p>No flights found.</p>';
-            } else {
-                // Display flights if found, including airline name and base price
-                resultDiv.innerHTML = data.map(flight => `
-                    <p>${flight['Airline']} Flight ${flight['Flight Number']} - ${flight['Departure Airport']} to ${flight['Arrival Airport']} on ${flight['Departure Date & Time']} - Base Price: $${flight['Base Price']}</p>
-                `).join('');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error); // Log error
-            document.getElementById('returnFlightResult').innerText = error.message; // Display error message
-        });
-    });
-
-    // Enable return date input if round trip is selected
-    document.getElementById('roundTrip').addEventListener('change', function() {
-        document.getElementById('returnDate').disabled = !this.checked;
-    });
-
+    document.getElementById('airline_name').value = airline;
+    document.getElementById('flight_number').value = flightNumber;
+    document.getElementById('departure_datetime').value = formattedDeparture;
+    document.getElementById('arrival_datetime').value = formattedArrival;
+    document.getElementById('sold_price').value = basePrice;
+}
 </script>

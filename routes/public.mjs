@@ -3,20 +3,18 @@ import sequelize from '../config/db.mjs';
 
 const router = express.Router();
 
-// Route to view flights
 router.get('/search-flights', async (req, res) => {
-    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query; // Query parameters
+    const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query;
 
     try {
-        // Log the query parameters for debugging
         console.log('Query parameters:', { departureAirport, arrivalAirport, departureDate, returnDate });
 
-        // Construct the SQL query with the provided conditions
         const query = `
             SELECT 
                 airline_name AS "Airline",
                 flight_number AS "Flight Number",
                 departure_datetime AS "Departure Date & Time",
+                arrival_datetime AS "Arrival Date & Time",
                 departure_airport AS "Departure Airport",
                 arrival_airport AS "Arrival Airport",
                 base_price AS "Base Price",
@@ -39,71 +37,63 @@ router.get('/search-flights', async (req, res) => {
             ORDER BY 
                 departure_datetime`;
 
-        // Prepare replacements array
         const replacements = [
             departureAirport, arrivalAirport, departureDate,
             ...(returnDate ? [arrivalAirport, departureAirport, returnDate] : [])
         ];
 
-        // Execute the query with replacements
         const [flights] = await sequelize.query(query, {
             replacements,
             type: sequelize.QueryTypes.SELECT
         });
 
-        // Ensure the result is always an array
         const resultArray = Array.isArray(flights) ? flights : [flights];
 
-        // Check if flights is undefined or empty
         if (!resultArray || resultArray.length === 0) {
             console.log('No flights found');
-            return res.json([]); // Return an empty array if no flights are found
+            return res.json([]);
         }
 
-        console.log('Flights retrieved:', resultArray); // Log the flights retrieved
-        res.json(resultArray); // Ensure a JSON response is always sent
+        console.log('Flights retrieved:', resultArray);
+        res.json(resultArray);
     } catch (error) {
-        console.error('Error retrieving flights:', error); // Log the error for debugging
-        res.status(500).json({ message: 'Error retrieving flights' }); // Send a JSON error response
+        console.error('Error retrieving flights:', error);
+        res.status(500).json({ message: 'Error retrieving flights' });
     }
 });
 
-// Route to view flight status
 router.get('/flight-status', async (req, res) => {
-    // Extract flight details from query
-    const { airline, flightNumber, date } = req.query; // Get query parameters
+    const { airline, flightNumber, date } = req.query;
 
     try {
-        // Query database for flight status
         const [flight] = await sequelize.query(
             `SELECT 
                 airline_name AS "Airline",
                 flight_number AS "Flight Number",
                 departure_datetime AS "Departure Date & Time",
+                arrival_datetime AS "Arrival Date & Time",
                 arrival_airport AS "Arrival Airport",
                 departure_airport AS "Departure Airport",
                 status AS "Flight Status"
             FROM 
                 Flight
             WHERE 
-                airline_name = ? -- Match airline name
-                AND flight_number = ? -- Match flight number
-                AND DATE(departure_datetime) = ?`, // Match departure date
+                airline_name = ?
+                AND flight_number = ?
+                AND DATE(departure_datetime) = ?`,
             {
-                replacements: [airline, flightNumber, date], // Use query parameters
+                replacements: [airline, flightNumber, date],
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        // Send status as response, or an empty object if not found
         if (flight) {
-            res.json({ status: flight['Flight Status'] }); // Return flight status
+            res.json({ status: flight['Flight Status'] });
         } else {
-            res.status(404).json({ message: 'Flight not found' }); // Flight not found response
+            res.status(404).json({ message: 'Flight not found' });
         }
     } catch (error) {
-        // Return error message as JSON
-        res.status(500).json({ message: 'Error retrieving flight status' }); // Error response
+        res.status(500).json({ message: 'Error retrieving flight status' });
     }
 });
 

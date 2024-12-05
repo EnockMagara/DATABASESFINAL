@@ -1,6 +1,8 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db.mjs';
 import Airline from './Airline.mjs';
+import StaffEmail from './StaffEmail.mjs';
+import StaffPhoneNumber from './StaffPhoneNumber.mjs';
 
 class AirlineStaff extends Model {}
 
@@ -28,5 +30,7 @@ AirlineStaff.init({
 });
 
 AirlineStaff.belongsTo(Airline, { foreignKey: 'airline_name' });
+AirlineStaff.hasMany(StaffEmail, { foreignKey: 'username' });
+AirlineStaff.hasMany(StaffPhoneNumber, { foreignKey: 'username' });
 
 export default AirlineStaff;

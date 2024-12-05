@@ -1,42 +1,42 @@
+<%- include('../header') %>
 <h1>Manage Flights</h1>
 <link rel="stylesheet" href="/css/main.css">
 
-<!-- Section to create a new flight -->
+<!-- Create Flight -->
 <h2>Create New Flight</h2>
 <form id="createFlightForm">
     <input type="text" name="flight_number" placeholder="Flight Number" required>
     <input type="datetime-local" name="departure_datetime" placeholder="Departure DateTime" required>
+    <input type="datetime-local" name="arrival_datetime" placeholder="Arrival DateTime" required>
     <input type="text" name="departure_airport" placeholder="Departure Airport" required>
     <input type="text" name="arrival_airport" placeholder="Arrival Airport" required>
     <input type="number" name="base_price" placeholder="Base Price" required>
     <input type="text" name="status" placeholder="Status" required>
     <select id="create_airplane_id" name="airplane_id" required>
-        <!-- Options will be populated by JavaScript -->
     </select>
     <button type="submit">Create Flight</button>
 </form>
 <div id="createFlightResult"></div>
 
-<!-- Section to update a flight -->
+<!-- Update Flight -->
 <h2>Update Flight</h2>
 <form id="updateFlightForm">
     <input type="text" id="update_flight_number" name="flight_number" placeholder="Flight Number" required>
     <input type="datetime-local" id="update_departure_datetime" name="departure_datetime" placeholder="Departure DateTime" required>
+    <input type="datetime-local" id="update_arrival_datetime" name="arrival_datetime" placeholder="Arrival DateTime" required>
     <input type="text" name="departure_airport" placeholder="Departure Airport" required>
     <input type="text" name="arrival_airport" placeholder="Arrival Airport" required>
     <input type="number" name="base_price" placeholder="Base Price" required>
     <input type="text" name="status" placeholder="Status" required>
     <select id="update_airplane_id" name="airplane_id" required>
-        <!-- Options will be populated by JavaScript -->
     </select>
     <button type="submit">Update Flight</button>
 </form>
 <div id="updateFlightResult"></div>
 
-<!-- Section to view flights with filters -->
+<!-- View Flights -->
 <h2>View Flights</h2>
 
-<!-- Form for the "to" flight -->
 <form id="toFlightForm">
     <input type="text" name="departureAirport" placeholder="Departure Airport" required>
     <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
@@ -45,7 +45,6 @@
 </form>
 <div id="toFlightResult"></div>
 
-<!-- Form for the "return" flight -->
 <form id="returnFlightForm">
     <input type="text" name="departureAirport" placeholder="Departure Airport" required>
     <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
@@ -54,7 +53,7 @@
 </form>
 <div id="returnFlightResult"></div>
 
-<!-- Section to change flight status -->
+<!-- Change Status -->
 <h2>Change Flight Status</h2>
 <form id="changeFlightStatusForm">
     <input type="text" id="status_flight_number" name="flight_number" placeholder="Flight Number" required>
@@ -97,58 +96,41 @@
 <div id="viewAirplanesResult"></div>
 
 <script>
-// AJAX for creating a new flight
+// Flight operations
 document.getElementById('createFlightForm').addEventListener('submit', function(event) {
     event.preventDefault();
     const formData = new FormData(this);
     fetch('/staff/create-flight', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams(formData)
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Create flight response:', data);
         document.getElementById('createFlightResult').innerText = data.message;
     })
     .catch(error => console.error('Error:', error));
 });
 
-// AJAX for updating a flight
 document.getElementById('updateFlightForm').addEventListener('submit', function(event) {
     event.preventDefault();
     const formData = new FormData(this);
     const flightNumber = document.getElementById('update_flight_number').value;
     const departureDatetime = document.getElementById('update_departure_datetime').value;
 
-    // Log form data to check if all fields are filled
-    console.log('Form data:', {
-        flightNumber,
-        departureDatetime,
-        departure_airport: formData.get('departure_airport'),
-        arrival_airport: formData.get('arrival_airport'),
-        base_price: formData.get('base_price'),
-        status: formData.get('status')
-    });
-
     fetch(`/staff/update-flight/${flightNumber}/${departureDatetime}`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams(formData)
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Update flight response:', data);
         document.getElementById('updateFlightResult').innerText = data.message;
     })
     .catch(error => console.error('Error:', error));
 });
 
-// AJAX for viewing the "to" flight
+
 document.getElementById('toFlightForm').addEventListener('submit', function(event) {
     event.preventDefault(); // Prevent default form submission
 
@@ -181,7 +163,7 @@ document.getElementById('toFlightForm').addEventListener('submit', function(even
                     </thead>
                     <tbody>
             `;
-            // Populate table rows with flight data
+
             tableHTML += data.map(flight => `
                 <tr>
                     <td>${flight['Flight Number']}</td>
@@ -230,7 +212,7 @@ document.getElementById('returnFlightForm').addEventListener('submit', function(
         if (!Array.isArray(data) || data.length === 0) {
             resultDiv.innerHTML = '<p>No flights found.</p>';
         } else {
-            // Create a table to display flight information with styles
+
             let tableHTML = `
                 <table class="styled-table">
                     <thead>
@@ -258,7 +240,7 @@ document.getElementById('returnFlightForm').addEventListener('submit', function(
                     </tbody>
                 </table>
             `;
-            resultDiv.innerHTML = tableHTML; // Insert the table into the result div
+            resultDiv.innerHTML = tableHTML; 
         }
     })
     .catch(error => {
@@ -275,9 +257,7 @@ document.getElementById('changeFlightStatusForm').addEventListener('submit', fun
     const departureDatetime = document.getElementById('status_departure_datetime').value;
     fetch(`/staff/change-flight-status/${flightNumber}/${departureDatetime}`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams(formData)
     })
     .then(response => {
@@ -316,7 +296,6 @@ fetch('/staff/airplanes')
     })
     .catch(error => console.error('Error fetching airplanes:', error));
 
-// AJAX for adding an airport
 document.getElementById('addAirportForm').addEventListener('submit', function(event) {
     event.preventDefault();
     const formData = new FormData(this);

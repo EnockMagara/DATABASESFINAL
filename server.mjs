@@ -8,6 +8,7 @@ import customerRoutes from './routes/customer.mjs';
 import publicRoutes from './routes/public.mjs';
 import errorHandler from './middleware/errorHandler.mjs';
 import dotenv from 'dotenv';
+import './models/associations.mjs'; 
 
 // Load environment variables
 dotenv.config();

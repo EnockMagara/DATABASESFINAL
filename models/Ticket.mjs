@@ -33,6 +33,13 @@ Ticket.init({
             key: 'departure_datetime'
         }
     },
+    arrival_datetime: {
+        type: DataTypes.DATE,
+        references: {
+            model: Flight,
+            key: 'arrival_datetime'
+        }
+    },
     email: {
         type: DataTypes.STRING(100),
         references: {

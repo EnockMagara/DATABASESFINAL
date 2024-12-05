@@ -9,10 +9,8 @@
 <body>
     <h1>Welcome to the Flight Reservation System</h1>
 
-    <!-- Section for viewing public information -->
     <section>
-        <h2>Search for Flights</h2>
-        <!-- Form for the "to" flight -->
+        <h2 class="custom-h2">Search for Flights</h2>
         <form id="toFlightForm">
             <input type="text" name="departureAirport" placeholder="Departure Airport" required>
             <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
@@ -21,7 +19,6 @@
         </form>
         <div id="toFlightResult"></div>
 
-        <!-- Form for the "return" flight -->
         <form id="returnFlightForm">
             <input type="text" name="departureAirport" placeholder="Departure Airport" required>
             <input type="text" name="arrivalAirport" placeholder="Arrival Airport" required>
@@ -30,7 +27,7 @@
         </form>
         <div id="returnFlightResult"></div>
 
-        <h2>Check Flight Status</h2>
+        <h2 class="custom-h2">Check Flight Status</h2>
         <form id="checkFlightStatusForm">
             <label for="airline">Airline Name:</label>
             <input type="text" id="airline" name="airline" required>
@@ -46,42 +43,33 @@
         <div id="flightStatusResult"></div>
     </section>
 
-    <!-- Section for user registration -->
     <section>
-        <h2>Register</h2>
-        <!-- Button for registration -->
+        <h2 class="custom-h2">Register</h2>
         <a href="/register" class="btn">Register</a>
     </section>
 
-    <!-- Section for user login -->
     <section>
-        <h2>Login</h2>
-        <!-- Buttons for customer and staff login -->
+        <h2 class="custom-h2">Login</h2>
         <a href="/customer-login" class="btn">Login as Customer</a>
         <a href="/staff-login" class="btn">Login as Airline Staff</a>
     </section>
 
     <script>
-    // AJAX for viewing the "to" flight
+    // Handle departure flight search
     document.getElementById('toFlightForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Collect form data
+        event.preventDefault();
         const formData = new FormData(this);
-        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+        const queryParams = new URLSearchParams(formData).toString();
 
-        // Fetch flights with query parameters
         fetch(`/public/search-flights?${queryParams}`, {
             method: 'GET'
         })
         .then(response => response.json())
         .then(data => {
-            const resultDiv = document.getElementById('toFlightResult'); // Get result div
+            const resultDiv = document.getElementById('toFlightResult');
             if (!Array.isArray(data) || data.length === 0) {
-                // Display message if no flights found
                 resultDiv.innerHTML = '<p>No flights found.</p>';
             } else {
-                // Create a table for the results
                 const table = `
                     <table class="styled-table">
                         <thead>
@@ -110,31 +98,26 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error); // Log error
-            document.getElementById('toFlightResult').innerText = 'An error occurred while fetching flights.'; // Display error message
+            console.error('Error:', error);
+            document.getElementById('toFlightResult').innerText = 'An error occurred while fetching flights.';
         });
     });
 
-    // AJAX for viewing the "return" flight
+    // Handle return flight search
     document.getElementById('returnFlightForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Collect form data
+        event.preventDefault();
         const formData = new FormData(this);
-        const queryParams = new URLSearchParams(formData).toString(); // Convert form data to query string
+        const queryParams = new URLSearchParams(formData).toString();
 
-        // Fetch flights with query parameters
         fetch(`/public/search-flights?${queryParams}`, {
             method: 'GET'
         })
         .then(response => response.json())
         .then(data => {
-            const resultDiv = document.getElementById('returnFlightResult'); // Get result div
+            const resultDiv = document.getElementById('returnFlightResult');
             if (!Array.isArray(data) || data.length === 0) {
-                // Display message if no flights found
                 resultDiv.innerHTML = '<p>No flights found.</p>';
             } else {
-                // Create a table for the results
                 const table = `
                     <table class="styled-table">
                         <thead>
@@ -163,38 +146,35 @@
             }
         })
         .catch(error => {
-            console.error('Error:', error); // Log error
-            document.getElementById('returnFlightResult').innerText = 'An error occurred while fetching flights.'; // Display error message
+            console.error('Error:', error);
+            document.getElementById('returnFlightResult').innerText = 'An error occurred while fetching flights.';
         });
     });
 
-    // AJAX for checking flight status
+    // Handle flight status check
     document.getElementById('checkFlightStatusForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent default form submission
-        const formData = new FormData(this); // Collect form data
-        // Fetch request to check flight status
+        event.preventDefault();
+        const formData = new FormData(this);
         fetch('/public/flight-status?' + new URLSearchParams(formData), {
             method: 'GET'
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok'); // Throw an error if response is not ok
+                throw new Error('Network response was not ok');
             }
-            return response.json(); // Parse JSON response
+            return response.json();
         })
         .then(data => {
-            const resultDiv = document.getElementById('flightStatusResult'); // Get result div
+            const resultDiv = document.getElementById('flightStatusResult');
             if (data.status) {
-                // Display flight status if found
                 resultDiv.innerHTML = `<p>Flight Status: ${data.status}</p>`;
             } else {
-                // Display message if flight not found
                 resultDiv.innerHTML = '<p>Flight not found.</p>';
             }
         })
         .catch(error => {
-            console.error('Error:', error); // Log error
-            document.getElementById('flightStatusResult').innerText = 'An error occurred while checking flight status.'; // Display error message
+            console.error('Error:', error);
+            document.getElementById('flightStatusResult').innerText = 'An error occurred while checking flight status.';
         });
     });
     </script>

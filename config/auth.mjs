@@ -2,20 +2,17 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import Customer from '../models/Customer.mjs';
 import AirlineStaff from '../models/AirlineStaff.mjs';
-import argon2 from 'argon2'; // Import argon2 for password hashing
+import argon2 from 'argon2';
 
-// Configure local strategy for customer
+// Customer authentication strategy
 passport.use('customer-local', new LocalStrategy(
     { usernameField: 'email' },
     async (email, password, done) => {
         try {
-            // Find customer by email
             const customer = await Customer.findOne({ where: { email } });
-            // Check if customer exists and password matches
             if (!customer || !(await argon2.verify(customer.password, password))) {
                 return done(null, false, { message: 'Invalid credentials' });
             }
-            // Successful login
             return done(null, customer);
         } catch (err) {
             return done(err);
@@ -23,18 +20,15 @@ passport.use('customer-local', new LocalStrategy(
     }
 ));
 
-// Configure local strategy for airline staff
+// Staff authentication strategy 
 passport.use('staff-local', new LocalStrategy(
     { usernameField: 'username' },
     async (username, password, done) => {
         try {
-            // Find staff by username
             const staff = await AirlineStaff.findOne({ where: { username } });
-            // Check if staff exists and password matches
             if (!staff || !(await argon2.verify(staff.password, password))) {
                 return done(null, false, { message: 'Invalid credentials' });
             }
-            // Successful login
             return done(null, staff);
         } catch (err) {
             return done(err);
@@ -42,30 +36,26 @@ passport.use('staff-local', new LocalStrategy(
     }
 ));
 
-// Serialize user into session
 passport.serializeUser((user, done) => {
     done(null, user.email || user.username);
 });
 
-// Deserialize user from session
 passport.deserializeUser((identifier, done) => {
-    // First, attempt to find the user as a Customer
     Customer.findOne({ where: { email: identifier } })
         .then(user => {
             if (user) {
-                return done(null, user); // If found, return the customer
+                return done(null, user);
             }
-            // If not found as a Customer, attempt to find as AirlineStaff
             return AirlineStaff.findOne({ where: { username: identifier } })
                 .then(staff => {
                     if (staff) {
-                        return done(null, staff); // If found, return the staff
+                        return done(null, staff);
                     }
-                    return done(new Error('User not found')); // If neither found, return error
+                    return done(new Error('User not found'));
                 });
         })
         .catch(err => {
-            console.error('Error during deserialization:', err); // Debugging log
+            console.error('Error during deserialization:', err);
             return done(err);
         });
 });

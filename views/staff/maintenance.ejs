@@ -1,18 +1,15 @@
+<%- include('../header') %>
 <h1>Schedule Maintenance</h1>
 <link rel="stylesheet" href="/css/main.css">
 
 <form id="scheduleMaintenanceForm">
-    <!-- Dropdown for Airplane ID -->
     <label for="airplane_id">Select Airplane:</label>
     <select id="airplane_id" name="airplane_id" required>
-        <!-- Options will be populated by JavaScript -->
     </select>
 
-    <!-- Input for Start Date and Time -->
     <label for="start_datetime">Start Date & Time:</label>
     <input type="datetime-local" id="start_datetime" name="start_datetime" required>
 
-    <!-- Input for End Date and Time -->
     <label for="end_datetime">End Date & Time:</label>
     <input type="datetime-local" id="end_datetime" name="end_datetime" required>
 
@@ -21,11 +18,11 @@
 <div id="scheduleMaintenanceResult"></div>
 
 <script>
-// Fetch and populate the airplane dropdown
+// Populate airplane dropdown
 fetch('/staff/airplanes')
     .then(response => response.json())
     .then(airplanes => {
-        console.log('Airplanes received:', airplanes); // Debug: Log received airplanes
+        console.log('Airplanes received:', airplanes); 
         if (!Array.isArray(airplanes)) {
             throw new Error('Expected an array of airplanes');
         }
@@ -39,22 +36,22 @@ fetch('/staff/airplanes')
     })
     .catch(error => console.error('Error fetching airplanes:', error));
 
-// AJAX for scheduling maintenance
+// Handle maintenance form submission
 document.getElementById('scheduleMaintenanceForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
-    const formData = new FormData(this); // Create a FormData object from the form
+    event.preventDefault();
+    const formData = new FormData(this);
     fetch('/staff/schedule-maintenance', {
-        method: 'POST', // Use POST method to send data
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for form data
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
+        body: new URLSearchParams(formData)
     })
     .then(response => {
         if (!response.ok) {
-            throw new Error('Network response was not ok'); // Throw an error if response is not ok
+            throw new Error('Network response was not ok');
         }
-        return response.json(); // Parse the response as JSON
+        return response.json();
     })
     .then(data => {
         if (data.message) {
@@ -66,7 +63,6 @@ document.getElementById('scheduleMaintenanceForm').addEventListener('submit', fu
         }
     })
     .catch(error => {
-        // Log the error and display a user-friendly message
         console.error('Error:', error);
         document.getElementById('scheduleMaintenanceResult').innerText = 'An error occurred while scheduling maintenance';
     });

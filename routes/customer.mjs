@@ -1,34 +1,30 @@
 import express from 'express';
-import Ticket from '../models/Ticket.mjs'; // Import the Ticket model
-import Flight from '../models/Flight.mjs'; // Import the Flight model
-import { Op } from 'sequelize'; // Import Sequelize operators
-import Rates from '../models/Rates.mjs'; // Import the Rates model
-import ensureAuthenticated from '../middleware/authMiddleware.mjs'; // Import your authentication middleware
-import sequelize from '../config/db.mjs'; // Import the sequelize instance
+import Ticket from '../models/Ticket.mjs';
+import Flight from '../models/Flight.mjs';
+import { Op } from 'sequelize';
+import Rates from '../models/Rates.mjs';
+import ensureAuthenticated from '../middleware/authMiddleware.mjs';
+import sequelize from '../config/db.mjs';
+import Airplane from '../models/Airplane.mjs';
 
 const router = express.Router();
 
-// Route to render the ratings page
 router.get('/ratings', ensureAuthenticated, (req, res) => {
-    res.render('customer/ratings', { user: req.user, tickets: [] }); // Pass user and tickets data
+    res.render('customer/ratings', { user: req.user, tickets: [] });
 });
 
-// Route to render the flights search page
 router.get('/flights', ensureAuthenticated, (req, res) => {
     res.render('customer/flights');
 });
 
-// Route to render the purchase page
 router.get('/purchase', ensureAuthenticated, (req, res) => {
     res.render('customer/purchase');
 });
 
-// Route to render the spending page
 router.get('/spending', ensureAuthenticated, (req, res) => {
     res.render('customer/spending');
 });
 
-// Route to search flights
 router.get('/search-flights', ensureAuthenticated, async (req, res) => {
     const { departureAirport, arrivalAirport, departureDate, returnDate } = req.query;
 
@@ -40,6 +36,7 @@ router.get('/search-flights', ensureAuthenticated, async (req, res) => {
                 airline_name AS "Airline",
                 flight_number AS "Flight Number",
                 departure_datetime AS "Departure Date & Time",
+                arrival_datetime AS "Arrival Date & Time",
                 departure_airport AS "Departure Airport",
                 arrival_airport AS "Arrival Airport",
                 base_price AS "Base Price",
@@ -87,42 +84,56 @@ router.get('/search-flights', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// Route to purchase a ticket
-router.post('/purchase-ticket', async (req, res) => {
-    const { airline_name, flight_number, departure_datetime, email, sold_price, card_number, name_on_card, card_expiration_date, passenger_first_name, passenger_last_name, passenger_dob } = req.body;
-
-    // Log incoming request data
-    console.log('Purchase request data:', req.body);
+router.post('/purchase-ticket', ensureAuthenticated, async (req, res) => {
+    const { airline_name, flight_number, departure_datetime, email, card_number, name_on_card, card_expiration_date, passenger_first_name, passenger_last_name, passenger_dob } = req.body;
 
     try {
-        // Parse the departure_datetime as UTC
-        const departureDate = new Date(departure_datetime + 'Z'); // Append 'Z' to treat it as UTC
+        const departureDate = new Date(departure_datetime + 'Z');
 
-        // Log the formatted date
-        console.log('Formatted departure date:', departureDate.toISOString());
-
-        // Check if the flight exists
-        const flightExists = await Flight.findOne({
+        const flight = await Flight.findOne({
             where: {
                 airline_name,
                 flight_number,
-                departure_datetime: departureDate // Use the formatted date
-            }
+                departure_datetime: departureDate
+            },
+            include: [{
+                model: Airplane,
+                attributes: ['number_of_seats']
+            }]
         });
 
-        if (!flightExists) {
-            console.log('Flight not found:', { airline_name, flight_number, departure_datetime: departureDate });
+        if (!flight) {
+            console.error('Flight does not exist with provided details');
             return res.status(400).json({ message: 'Flight does not exist' });
         }
 
-        // Create a new ticket using the Sequelize model
+        const bookedTicketsCount = await Ticket.count({
+            where: {
+                airline_name,
+                flight_number,
+                departure_datetime: departureDate
+            }
+        });
+
+        if (bookedTicketsCount >= flight.Airplane.number_of_seats) {
+            console.error('No available seats on this flight');
+            return res.status(400).json({ message: 'No available seats on this flight' });
+        }
+
+        let ticketPrice = flight.base_price;
+        const capacityThreshold = 0.8 * flight.Airplane.number_of_seats;
+
+        if (bookedTicketsCount >= capacityThreshold) {
+            ticketPrice *= 1.25;
+        }
+
         const ticket = await Ticket.create({
             airline_name,
             flight_number,
-            departure_datetime: departureDate, // Use the formatted date
+            departure_datetime: departureDate,
             email,
-            sold_price,
-            purchase_datetime: new Date(), // Set the current date and time
+            sold_price: ticketPrice,
+            purchase_datetime: new Date(),
             card_number,
             name_on_card,
             card_expiration_date,
@@ -131,28 +142,19 @@ router.post('/purchase-ticket', async (req, res) => {
             passenger_dob
         });
 
-        // Log the generated UUID for the ticket
-        console.log('Generated ticket_id:', ticket.ticket_id);
-
-        res.status(201).json({ message: 'Ticket purchased successfully', ticketId: ticket.ticket_id });
+        res.status(201).json({ message: 'Ticket purchased successfully', ticketId: ticket.ticket_id, price: ticketPrice });
     } catch (error) {
-        // Log the error for debugging
         console.error('Error purchasing ticket:', error);
         res.status(500).json({ message: 'Error purchasing ticket' });
     }
 });
 
-// Route to cancel a trip
 router.post('/cancel-trip', ensureAuthenticated, async (req, res) => {
-    const { ticket_id } = req.body; // Only get ticket_id from the request body
-    const email = req.user.email; // Retrieve email from the authenticated user
-
-    // Log the incoming request data
-    console.log('Cancel trip request data:', { ticket_id, email });
+    const { ticket_id } = req.body;
+    const email = req.user.email;
 
     try {
         if (!ticket_id || !email) {
-            // If request data is missing, return an error
             return res.status(400).json({ message: 'Invalid request data' });
         }
 
@@ -167,26 +169,19 @@ router.post('/cancel-trip', ensureAuthenticated, async (req, res) => {
             }
         );
 
-        // Log a success message
-        console.log('Trip cancellation request processed successfully');
-
-        // Always return a success message if request data was valid
         res.json({ message: 'Trip cancellation request processed successfully' });
 
     } catch (error) {
-        // Log the error details
         console.error('Error cancelling trip:', error);
         res.status(500).json({ message: 'Error cancelling trip' });
     }
 });
 
-// Route to give feedback
 router.post('/give-feedback', ensureAuthenticated, async (req, res) => {
     const { flight_number, departure_datetime, rating, comments } = req.body;
-    const { email } = req.user; // Retrieve email from the authenticated user
+    const { email } = req.user;
 
     try {
-        // Check if the customer has a ticket for the specified flight
         const [ticket] = await sequelize.query(
             `SELECT * FROM Ticket 
             WHERE email = ? 
@@ -202,12 +197,11 @@ router.post('/give-feedback', ensureAuthenticated, async (req, res) => {
             return res.status(403).json({ message: 'You do not have a ticket for this flight' });
         }
 
-        // Optionally, check if the flight has already departed
         const [flight] = await sequelize.query(
             `SELECT airline_name FROM Flight 
             WHERE flight_number = ? 
             AND departure_datetime = ? 
-            AND departure_datetime < NOW()`, // Ensure the flight has departed
+            AND departure_datetime < NOW()`,
             {
                 replacements: [flight_number, departure_datetime],
                 type: sequelize.QueryTypes.SELECT
@@ -235,50 +229,44 @@ router.post('/give-feedback', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// Route to get total spending for the past year
 router.get('/spending/total-year', async (req, res) => {
-    const { email } = req.user; // Assume email is extracted from session or JWT
+    const { email } = req.user;
 
     try {
-        // SQL query to get total spending for the past year
         const result = await sequelize.query(
             `SELECT 
-                SUM(T.sold_price) AS total_spent -- Calculate the total spending
+                SUM(T.sold_price) AS total_spent
             FROM 
-                Ticket T -- From the Ticket table
+                Ticket T
             JOIN 
-                Customer C ON T.email = C.email -- Join with Customer table to ensure valid customer
+                Customer C ON T.email = C.email
             WHERE 
-                T.purchase_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR) -- Filter for the past year
-                AND C.email = ?; -- Filter by specific customer email`,
+                T.purchase_datetime >= DATE_SUB(NOW(), INTERVAL 1 YEAR)
+                AND C.email = ?;`,
             {
-                replacements: [email], // Use replacements to prevent SQL injection
-                type: sequelize.QueryTypes.SELECT // Specify the query type
+                replacements: [email],
+                type: sequelize.QueryTypes.SELECT
             }
         );
 
-        res.json(result[0] || {}); // Send the result as JSON response
+        res.json(result[0] || {});
     } catch (error) {
-        res.status(500).json({ message: 'Error retrieving total spending for the past year' }); // Send error response
+        res.status(500).json({ message: 'Error retrieving total spending for the past year' });
     }
 });
 
-// Route to get monthly spending for the last 6 months
 router.get('/spending/monthly-last-6-months', async (req, res) => {
     const { email } = req.user;
 
     try {
-        // Get the current date
         const currentDate = new Date();
         
-        // Generate the last 6 months starting from the current month
         const months = [];
         for (let i = 0; i < 6; i++) {
             const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-            months.push(date.toISOString().slice(0, 7)); // Format as 'YYYY-MM'
+            months.push(date.toISOString().slice(0, 7));
         }
 
-        // Execute the SQL query to get monthly spending
         const results = await sequelize.query(
             `SELECT 
                 DATE_FORMAT(T.purchase_datetime, '%Y-%m') AS month,
@@ -291,35 +279,32 @@ router.get('/spending/monthly-last-6-months', async (req, res) => {
             GROUP BY 
                 month
             ORDER BY 
-                month DESC`, // Order by month in descending order
+                month DESC`,
             {
                 replacements: [email],
                 type: sequelize.QueryTypes.SELECT
             }
         );
 
-        // Create a map of results for easy lookup
         const spendingMap = results.reduce((acc, { month, total_spent }) => {
             acc[month] = total_spent;
             return acc;
         }, {});
 
-        // Fill in missing months with zero spending
         const completeResults = months.map(month => ({
             month,
             total_spent: spendingMap[month] || 0
         }));
 
-        res.json(completeResults); // Send the complete results
+        res.json(completeResults);
     } catch (error) {
         res.status(500).json({ message: 'Error retrieving monthly spending for the last 6 months' });
     }
 });
 
-// Route to get total and monthly spending for a specified date range
 router.get('/spending/total-range', async (req, res) => {
     const { email } = req.user;
-    const { startDate, endDate } = req.query; // Assume dates are passed as query parameters
+    const { startDate, endDate } = req.query;
 
     try {
         const totalResult = await sequelize.query(
@@ -361,28 +346,27 @@ router.get('/spending/total-range', async (req, res) => {
     }
 });
 
-// Route to get tickets more than 24 hours away
 router.get('/tickets/future', ensureAuthenticated, async (req, res) => {
     try {
         const tickets = await sequelize.query(`
             SELECT 
-                ticket_id, -- Ticket ID
-                flight_number, -- Flight number
-                departure_datetime -- Departure date and time
+                ticket_id,
+                flight_number,
+                departure_datetime
             FROM 
                 Ticket
             WHERE 
-                email = :email -- Filter by customer's email
-                AND departure_datetime > NOW() + INTERVAL 1 DAY -- More than 24 hours away
+                email = :email
+                AND departure_datetime > NOW() + INTERVAL 1 DAY
         `, {
-            replacements: { email: req.user.email }, // Use replacements to prevent SQL injection
-            type: sequelize.QueryTypes.SELECT // Specify the query type
+            replacements: { email: req.user.email },
+            type: sequelize.QueryTypes.SELECT
         });
 
-        res.json(tickets); // Send the tickets as JSON
+        res.json(tickets);
     } catch (error) {
-        console.error('Error retrieving tickets:', error); // Log any errors
-        res.status(500).json({ message: 'Error retrieving tickets' }); // Send error response
+        console.error('Error retrieving tickets:', error);
+        res.status(500).json({ message: 'Error retrieving tickets' });
     }
 });
 

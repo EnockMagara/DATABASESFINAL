@@ -1,3 +1,4 @@
+<h1>Customer Login</h1>
 <form id="customerLoginForm" method="post">
     <link rel="stylesheet" href="/css/main.css">
     <input type="hidden" name="userType" value="customer">
@@ -12,38 +13,32 @@
 
 <script>
 document.getElementById('customerLoginForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // Prevent the default form submission
-    const formData = new FormData(this); // Create a FormData object from the form
+    event.preventDefault();
+    const formData = new FormData(this);
     fetch('/login', {
-        method: 'POST', // Use POST method to send data
+        method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded' // Set the content type for the request
+            'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: new URLSearchParams(formData) // Convert form data to URL-encoded string
+        body: new URLSearchParams(formData)
     })
     .then(response => {
         if (response.redirected) {
-            // If the response is redirected, navigate to the new URL
             window.location.href = response.url;
         } else {
-            // Otherwise, parse the response as JSON
             return response.json();
         }
     })
     .then(data => {
         if (data) {
-            // Check if the data object is present
             if (!data.success) {
-                // If login is not successful, alert the user with the message
                 alert('Login failed: ' + data.message);
             } else {
-                // If login is successful, handle success (e.g., redirect or show a message)
                 alert('Login successful!');
             }
         }
     })
     .catch(error => {
-        // Log the error and alert the user about the error
         console.error('Error:', error);
         alert('An error occurred during login. Please try again.');
     });

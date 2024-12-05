@@ -6,7 +6,8 @@
         <option value="staff">Airline Staff</option>
     </select>
 
-    <label for="email">Email:</label>
+    <!-- Hidden email field for staff -->
+    <label for="email" id="emailLabel">Email:</label>
     <input type="email" id="email" name="email" required>
 
     <label for="username">Username:</label>
@@ -58,6 +59,20 @@
     <div id="staffFields" style="display: none;">
         <label for="airline_name">Airline Name:</label>
         <input type="text" id="airline_name" name="airline_name">
+
+        <!-- Container for multiple staff emails -->
+        <div id="staffEmailsContainer">
+            <label for="staff_email_0">Staff Email:</label>
+            <input type="email" id="staff_email_0" name="staff_emails[]" required>
+        </div>
+        <button type="button" onclick="addEmailField()">Add Another Email</button>
+
+        <!-- Container for multiple staff phone numbers -->
+        <div id="staffPhoneNumbersContainer">
+            <label for="staff_phone_number_0">Staff Phone Number:</label>
+            <input type="text" id="staff_phone_number_0" name="staff_phone_numbers[]" required>
+        </div>
+        <button type="button" onclick="addPhoneNumberField()">Add Another Phone Number</button>
     </div>
 
     <button type="submit" class="btn">Register</button>
@@ -66,8 +81,64 @@
 <script>
 document.getElementById('userType').addEventListener('change', function() {
     const userType = this.value;
+    const emailField = document.getElementById('email');
+    const emailLabel = document.getElementById('emailLabel');
+    const staffEmailField = document.getElementById('staff_email_0');
+    const staffPhoneField = document.getElementById('staff_phone_number_0');
+
+    if (userType === 'staff') {
+        emailField.type = 'hidden'; // Hide the email field
+        emailLabel.style.display = 'none'; // Hide the email label
+        staffEmailField.required = true; // Set staff email as required
+        staffPhoneField.required = true; // Set staff phone as required
+        staffEmailField.addEventListener('input', function() {
+            emailField.value = staffEmailField.value; // Set email field value to first staff email
+        });
+    } else {
+        emailField.type = 'email'; // Show the email field
+        emailLabel.style.display = 'block'; // Show the email label
+        emailField.value = ''; // Clear the email field value
+        staffEmailField.required = false; // Remove required from staff email
+        staffPhoneField.required = false; // Remove required from staff phone
+    }
+
     document.getElementById('customerFields').style.display = userType === 'customer' ? 'block' : 'none';
     document.getElementById('staffFields').style.display = userType === 'staff' ? 'block' : 'none';
+});
+
+function addEmailField() {
+    const container = document.getElementById('staffEmailsContainer');
+    const index = container.children.length / 2; // Calculate the next index
+    const label = document.createElement('label');
+    label.setAttribute('for', `staff_email_${index}`);
+    label.textContent = 'Staff Email:';
+    const input = document.createElement('input');
+    input.type = 'email';
+    input.id = `staff_email_${index}`;
+    input.name = 'staff_emails[]';
+    container.appendChild(label);
+    container.appendChild(input);
+}
+
+function addPhoneNumberField() {
+    const container = document.getElementById('staffPhoneNumbersContainer');
+    const index = container.children.length / 2; // Calculate the next index
+    const label = document.createElement('label');
+    label.setAttribute('for', `staff_phone_number_${index}`);
+    label.textContent = 'Staff Phone Number:';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `staff_phone_number_${index}`;
+    input.name = 'staff_phone_numbers[]';
+    container.appendChild(label);
+    container.appendChild(input);
+}
+
+document.getElementById('registerForm').addEventListener('submit', function(event) {
+    const formData = new FormData(this);
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`); // Log each form field and its value
+    }
 });
 </script>
 
